@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ContentRate Leaderboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .glass { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(10px); }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col items-center p-6">
+
+  <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-red-600 mb-4">
+    ContentRate Leaderboard
+  </h1>
+  <p class="text-gray-400 mb-6 text-center max-w-xl">
+    Ranking the Content Output of the Greatest Farmers.
+  </p>
+
+  <div id="leaderboard" class="glass rounded-xl p-6 w-full max-w-3xl shadow-lg"></div>
+
+  <script>
+    const LOCAL_KEY = 'contentrate_localdata';
+    let farmers = [];
+    let isAdmin = false;
+
+    async function loadData() {
+      const local = localStorage.getItem(LOCAL_KEY);
+      if (local) {
+        farmers = JSON.parse(local);
+        render();
+      } else {
+        const res = await fetch('data.json');
+        farmers = await res.json();
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(farmers));
+        render();
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(farmers));
+    }
+
+    function calculateAverage(scores) {
+      if (!scores.length) return 0;
+      const vals = scores.slice(0,5).map(s=>s.score);
+      return vals.reduce((a,b)=>a+b,0)/vals.length;
+    }
+
+    function getScoreColor(score) {
+      if (score >= 9) return 'bg-purple-500';
+      if (score >= 8) return 'bg-sky-500';
+      if (score >= 7) return 'bg-green-500';
+      if (score >= 6.5) return 'bg-yellow-400 text-gray-900';
+      if (score >= 6) return 'bg-orange-500';
+      return 'bg-red-500';
+    }
+
+    function render() {
+      const container = document.getElementById('leaderboard');
+      farmers.sort((a,b)=>calculateAverage(b.scores)-calculateAverage(a.scores));
+      container.innerHTML = farmers.map((f,i)=>{
+        const avg = calculateAverage(f.scores).toFixed(2);
+        return `<div class='flex items-center justify-between p-3 mb-2 rounded-lg hover:bg-gray-700 transition'>
+          <div>
+            <div class='font-semibold text-lg'>#${i+1} ${f.name}</div>
+            <div class='text-gray-400 text-sm'>Avg (5D): ${avg}</div>
+          </div>
+          <span class='px-3 py-1 rounded-full font-bold text-gray-900 ${getScoreColor(avg)}'>${avg}</span>
+        </div>`;
+      }).join('');
+    }
+
+    function exportData() {
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(farmers, null, 2));
+      const a = document.createElement('a');
+      a.href = dataStr;
+      a.download = 'data.json';
+      a.click();
+    }
+
+    function handleAdminCommand(e) {
+      if (e.target.value.trim() === '/admin') {
+        isAdmin = true;
+        alert('Admin mode enabled! You can now edit data locally and export JSON.');
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
