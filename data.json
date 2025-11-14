@@ -1,7 +1,8 @@
 [
     {
-        "id": "id-ziad",
+        "id": "ziad",
         "name": "Ziad",
+        "bio": "A consistent content farmer known for stable output.",
         "scores": [
             {
                 "date": "2025-11-10",
@@ -16,25 +17,25 @@
                 "score": 7.9
             },
             {
-                "date": "2025-11-07",
+                "date": "2025-10-29",
                 "score": 8.1
             },
             {
-                "date": "2025-11-06",
-                "score": 8.5
+                "date": "2025-10-20",
+                "score": 7.5
             }
         ],
-        "accolades": [
-            "Strong Consistency",
-            "Rising Star"
+        "currentAccolades": [
+            "Farmer of the Day"
         ],
-        "farmerOfTheDay": true,
-        "farmerOfTheMonth": false,
-        "createdAt": "2025-11-01T12:00:00Z"
+        "pastAccolades": [
+            "Farmer of the Month \u2013 October"
+        ]
     },
     {
-        "id": "id-ayub",
+        "id": "ayub",
         "name": "Ayub",
+        "bio": "Specializes in high\u2011impact, high\u2011quality content farming.",
         "scores": [
             {
                 "date": "2025-11-10",
@@ -49,52 +50,19 @@
                 "score": 8.9
             },
             {
-                "date": "2025-11-07",
-                "score": 9.1
-            },
-            {
-                "date": "2025-11-06",
+                "date": "2025-10-27",
                 "score": 9.0
+            },
+            {
+                "date": "2025-10-19",
+                "score": 8.4
             }
         ],
-        "accolades": [
-            "Farmer of the Month",
-            "Peak Performance"
+        "currentAccolades": [
+            "Farmer of the Month"
         ],
-        "farmerOfTheDay": false,
-        "farmerOfTheMonth": true,
-        "createdAt": "2025-11-01T12:00:00Z"
-    },
-    {
-        "id": "id-omar",
-        "name": "Omar",
-        "scores": [
-            {
-                "date": "2025-11-10",
-                "score": 7.2
-            },
-            {
-                "date": "2025-11-09",
-                "score": 6.8
-            },
-            {
-                "date": "2025-11-08",
-                "score": 7.0
-            },
-            {
-                "date": "2025-11-07",
-                "score": 6.9
-            },
-            {
-                "date": "2025-11-06",
-                "score": 7.1
-            }
-        ],
-        "accolades": [
-            "Solid Recovery"
-        ],
-        "farmerOfTheDay": false,
-        "farmerOfTheMonth": false,
-        "createdAt": "2025-11-01T12:00:00Z"
+        "pastAccolades": [
+            "Peak Performance Award"
+        ]
     }
 ]
