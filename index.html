@@ -3,129 +3,206 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>ContentRate Leaderboard</title>
+<title>ContentRate Leaderboard v2</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-.glass { background: rgba(30,41,59,0.55); backdrop-filter: blur(10px); }
-.score-purple{background:#8b5cf6;}
-.score-lightblue{background:#0ea5e9;}
-.score-green{background:#10b981;}
-.score-yellow{background:#facc15;color:#1f2937;}
-.score-orange{background:#f97316;}
-.score-red{background:#ef4444;}
+.glass{background:rgba(30,41,59,0.55);backdrop-filter:blur(12px);}
+.bar{transition:height 0.6s ease, transform 0.3s ease;}
+.bar:hover{transform:scale(1.05);}
+.avg-line{border-top:2px dotted white;}
+.discord-badge{background:#5865f2;padding:4px 10px;border-radius:12px;font-size:12px;}
 </style>
 </head>
 <body class="bg-gray-900 text-gray-100 p-6">
 
-<h1 class="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-red-600 text-center mb-6">
-ContentRate Leaderboard
+<h1 class="text-4xl font-extrabold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-red-600">
+ContentRate Leaderboard v2
 </h1>
 
-<div class="max-w-3xl mx-auto glass p-6 rounded-xl shadow-xl">
-    <input id="search" placeholder="Search..." class="w-full p-2 rounded bg-gray-800 mb-4" />
+<div class="max-w-3xl mx-auto">
+    <input id="search" class="w-full p-2 rounded bg-gray-800 mb-4" placeholder="Search...">
+
     <div id="main"></div>
 </div>
 
 <script>
-let LOCAL_KEY = "contentrate_local";
-let farmers = [];
-let isAdmin = false;
-let view = "leaderboard";
-let selected = null;
+let LOCAL="cr_v2";
+let data=[];
+let admin=false;
+let view="leaderboard";
+let selected=null;
 
 async function init(){
-    let local = localStorage.getItem(LOCAL_KEY);
-    if(local){ farmers = JSON.parse(local); }
+    let local=localStorage.getItem(LOCAL);
+    if(local) data=JSON.parse(local);
     else{
-        let res = await fetch("data.json");
-        farmers = await res.json();
-        localStorage.setItem(LOCAL_KEY, JSON.stringify(farmers));
+        let r=await fetch("data.json");
+        data=await r.json();
+        localStorage.setItem(LOCAL,JSON.stringify(data));
     }
-    document.getElementById("search").addEventListener("input", e=>{
-        if(e.target.value==="/admin"){ isAdmin=true; alert("Admin unlocked"); e.target.value=""; }
+    document.getElementById("search").addEventListener("input",e=>{
+        if(e.target.value==="/admin"){admin=true;alert("Admin unlocked");e.target.value="";}
         render();
     });
     render();
 }
 
-function save(){ localStorage.setItem(LOCAL_KEY, JSON.stringify(farmers)); }
+function save(){localStorage.setItem(LOCAL,JSON.stringify(data));}
 
 function avg(f){
     if(!f.scores.length) return 0;
-    let last = f.scores.slice(0,5).map(s=>s.score);
-    return last.reduce((a,b)=>a+b,0)/last.length;
+    let vals=f.scores.map(s=>s.score);
+    return vals.reduce((a,b)=>a+b,0)/vals.length;
 }
 
-function color(score){
-    if(score>=9) return "score-purple";
-    if(score>=8) return "score-lightblue";
-    if(score>=7) return "score-green";
-    if(score>=6.5) return "score-yellow";
-    if(score>=6) return "score-orange";
-    return "score-red";
+function percentile(f){
+    let sorted=data.slice().sort((a,b)=>avg(b)-avg(a));
+    let rank=sorted.findIndex(x=>x.id===f.id)+1;
+    return ((rank-1)/data.length*100).toFixed(0);
 }
 
-function showProfile(id){
-    selected = farmers.find(f=>f.id===id);
-    view="profile";
-    render();
+function color(s){
+    if(s>=9)return"bg-purple-500";
+    if(s>=8)return"bg-sky-500";
+    if(s>=7)return"bg-green-500";
+    if(s>=6.5)return"bg-yellow-400 text-gray-900";
+    if(s>=6)return"bg-orange-500";
+    return"bg-red-500";
 }
+
+function show(id){selected=data.find(f=>f.id===id);view="profile";render();}
 
 function exportJSON(){
-    let data = JSON.stringify(farmers,null,2);
-    let a = document.createElement("a");
-    a.href = "data:text/json;charset=utf-8,"+encodeURIComponent(data);
-    a.download="data.json";
-    a.click();
+    let a=document.createElement("a");
+    a.href="data:text/json,"+encodeURIComponent(JSON.stringify(data,null,2));
+    a.download="data.json";a.click();
 }
 
 function render(){
-    let main = document.getElementById("main");
-    if(view==="profile"){ renderProfile(main); return; }
-    renderLeaderboard(main);
+    let m=document.getElementById("main");
+    if(view==="profile"){renderProfile(m);return;}
+    renderLeaderboard(m);
 }
 
-function renderLeaderboard(main){
-    let s = document.getElementById("search").value.toLowerCase();
-    let list = farmers.slice().sort((a,b)=>avg(b)-avg(a));
-    list = list.filter(f=>f.name.toLowerCase().includes(s));
-    main.innerHTML = list.map((f,i)=>{
-        let a = avg(f).toFixed(2);
-        return `
-        <div onclick="showProfile('${f.id}')" class="p-3 my-2 rounded bg-gray-800 hover:bg-gray-700 cursor-pointer flex justify-between">
+function renderLeaderboard(m){
+    let s=document.getElementById("search").value.toLowerCase();
+    let list=data.slice().sort((a,b)=>avg(b)-avg(a)).filter(f=>f.name.toLowerCase().includes(s));
+    m.innerHTML=list.map((f,i)=>`
+    <div onclick="show('${f.id}')" class="glass p-3 my-2 rounded cursor-pointer hover:bg-gray-700 transition">
+        <div class="flex justify-between">
             <div>
                 <div class="font-bold">#${i+1} ${f.name}</div>
-                <div class="text-gray-400 text-sm">Avg: ${a}</div>
+                <div class="text-gray-400 text-sm">Avg: ${avg(f).toFixed(2)}</div>
             </div>
-            <div class="px-3 py-1 rounded-full font-bold text-gray-900 ${color(a)}">${a}</div>
-        </div>`;
-    }).join("")
-    + (isAdmin? `<button onclick="exportJSON()" class="mt-4 bg-green-600 p-2 rounded">Export JSON</button>`:"");
+            <div class="px-3 py-1 rounded-full font-bold text-gray-900 ${color(avg(f))}">
+                ${avg(f).toFixed(2)}
+            </div>
+        </div>
+    </div>`).join("")
+    + (admin?`<button onclick="exportJSON()" class="mt-4 bg-green-600 p-2 rounded">Export JSON</button>`:"");
 }
 
-function renderProfile(main){
-    let f = selected;
-    let a = avg(f).toFixed(2);
-    let bars = f.scores.slice(0,5).map(s=>`
-        <div class="flex items-end gap-2">
-            <div class="${color(s.score)} w-6" style="height:${s.score*10}px"></div>
-            <div class="text-xs">${s.date}</div>
+function renderProfile(m){
+    let f=selected;
+    let a=avg(f);
+
+    let grouped={};
+    f.scores.forEach(s=>{
+        let [y,mo]=s.date.split("-"); 
+        let key=`${y}-${mo}`;
+        if(!grouped[key]) grouped[key]=[];
+        grouped[key].push(s);
+    });
+
+    let barMax=10;
+
+    let bars=f.scores.slice(0,7).map(s=>`
+        <div class="flex flex-col items-center">
+            <div class="bar ${color(s.score)} w-6" style="height:${s.score*10}px"></div>
+            <div class="text-xs mt-1">${s.date}</div>
         </div>
     `).join("");
 
-    main.innerHTML = `
-    <button onclick="view='leaderboard';render();" class="text-yellow-400 mb-4">&larr; Back</button>
-    <h2 class="text-3xl font-bold mb-4">${f.name}</h2>
-    <div class="mb-4">
-        <span class="px-3 py-1 rounded-full text-gray-900 ${color(a)}">${a}</span>
-        <span class="ml-2 text-gray-400">5‑day average</span>
+    let monthsHTML=Object.keys(grouped).sort().reverse().map(mon=>`
+        <div class="mb-4">
+            <div class="font-bold mb-2">${mon}</div>
+            <div class="space-y-1">
+                ${grouped[mon].map(s=>`
+                    <div class="flex justify-between bg-gray-800 p-2 rounded">
+                        <span>${s.date}</span>
+                        <span class="px-2 py-1 rounded ${color(s.score)}">${s.score}</span>
+                    </div>
+                `).join("")}
+            </div>
+        </div>
+    `).join("");
+
+    m.innerHTML=`
+    <button onclick="view='leaderboard';render();" class="text-yellow-400">&larr; Back</button>
+
+    <h2 class="text-3xl font-bold mt-4 mb-2">${f.name}</h2>
+
+    <p class="text-gray-300 mb-3">${f.bio}</p>
+
+    <div class="text-gray-400 mb-4">Percentile: Top ${percentile(f)}%</div>
+
+    <h3 class="font-bold mb-2">Current Accolades</h3>
+    <div class="flex flex-wrap gap-2 mb-4">
+        ${f.currentAccolades.map(a=>`<span class="discord-badge">${a}</span>`).join("")}
     </div>
-    <div class="glass p-4 rounded mb-4">
-        <h3 class="font-bold mb-2">Recent Scores</h3>
-        <div class="flex gap-4">${bars}</div>
+
+    <h3 class="font-bold mb-2">Past Accolades</h3>
+    <div class="space-y-1 mb-6">
+        ${f.pastAccolades.map(a=>`<div class="bg-gray-800 p-2 rounded">${a}</div>`).join("")}
     </div>
-    ${isAdmin? `<button onclick="exportJSON()" class="bg-green-600 p-2 rounded">Export JSON</button>`:""}
+
+    <h3 class="font-bold mb-2">Recent Score Chart</h3>
+    <div class="relative h-[120px] border-gray-600">
+        <div class="absolute w-full avg-line" style="top:${120-(a*10)}px"></div>
+        <div class="flex gap-4 items-end">${bars}</div>
+    </div>
+
+    <h3 class="mt-6 font-bold mb-2">Score History</h3>
+    <div class="max-h-64 overflow-y-auto pr-2">
+        ${monthsHTML}
+    </div>
+
+    ${admin? adminPanelHTML(f):""}
     `;
+}
+
+function adminPanelHTML(f){
+    return `
+    <div class="mt-6 p-4 glass rounded">
+        <h3 class="font-bold mb-2">Admin Panel</h3>
+
+        <label class="text-sm">Edit Biography:</label>
+        <textarea id="bioEdit" class="w-full p-2 rounded bg-gray-800 mb-3">${f.bio}</textarea>
+
+        <label class="text-sm">Add Score:</label>
+        <input id="newScore" class="w-full p-2 rounded bg-gray-800 mb-2" placeholder="Score (e.g. 8.4)">
+        <input id="newDate" class="w-full p-2 rounded bg-gray-800 mb-2" placeholder="Date (YYYY-MM-DD)">
+
+        <button onclick="addScore('${f.id}')" class="bg-blue-600 p-2 rounded w-full mb-3">Add Score</button>
+
+        <button onclick="saveBio('${f.id}')" class="bg-green-600 p-2 rounded w-full mb-2">Save Changes</button>
+    </div>`;
+}
+
+function saveBio(id){
+    let f=data.find(x=>x.id===id);
+    f.bio=document.getElementById("bioEdit").value;
+    save(); render();
+}
+
+function addScore(id){
+    let f=data.find(x=>x.id===id);
+    let s=parseFloat(document.getElementById("newScore").value);
+    let d=document.getElementById("newDate").value;
+    if(!isNaN(s)&&d.length>3){
+        f.scores.unshift({date:d,score:s});
+    }
+    save(); render();
 }
 
 init();
@@ -133,4 +210,3 @@ init();
 
 </body>
 </html>
-
