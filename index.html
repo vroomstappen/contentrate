@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ContentRate - The Content Farmer Leaderboard (Client-Side)</title>
+    <title>ContentRate - The Content Farmer Leaderboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://kit.fontawesome.com/c60012891f.js" crossorigin="anonymous"></script>
     <style>
@@ -12,7 +12,7 @@
         .score-red { background-color: #ef4444; }
         .score-orange { background-color: #f97316; }
         .score-yellow { background-color: #facc15; }
-        .score-green { background-color: #10b981; } /* FIX: Changed from blueish #22c5e5 to a clear green */
+        .score-green { background-color: #10b981; }
         .score-lightblue { background-color: #0ea5e9; }
         .score-purple { background-color: #8b5cf6; }
 
@@ -74,33 +74,16 @@
             <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-red-600 mb-2">
                 ContentRate
             </h1>
-            <p class="text-gray-400 text-lg mb-2">Ranking the Content Output of the Greatest Farmers. (Client-Side Data)</p>
-            <p id="user-info" class="text-xs text-gray-500">Data Source: Browser LocalStorage</p>
+            <p class="text-gray-400 text-lg mb-2">Ranking the Content Output of the Greatest Farmers.</p>
         </header>
 
         <div id="main-content" class="bg-gray-800 rounded-xl shadow-2xl p-4 sm:p-6">
-            <p id="loading-status" class="text-center text-gray-400">Loading data from LocalStorage...</p>
+            <p id="loading-status" class="text-center text-gray-400">Loading data...</p>
         </div>
 
         <footer class="text-center mt-8 text-gray-500 text-sm">
-            <p>ContentRate | All data is stored in your browser.</p>
-            <button onclick="showAdminModal()" id="admin-toggle-button" class="mt-1 text-yellow-500 hover:text-yellow-400 transition duration-150">
-                Admin Access
-            </button>
-            <div id="admin-error" class="text-red-500 mt-2 hidden"></div>
+            <p>ContentRate | All data is static and globally shared.</p>
         </footer>
-    </div>
-
-    <div id="admin-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
-        <div class="bg-gray-800 rounded-xl p-6 w-full max-w-sm shadow-2xl border border-yellow-600">
-            <h3 class="text-2xl font-bold mb-4 text-yellow-400">Enter Admin Code</h3>
-            <input type="password" id="admin-code-input" class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition" placeholder="Code (4463)">
-            <div id="code-error" class="text-red-500 text-sm mt-2 hidden">Invalid Code.</div>
-            <div class="flex justify-between mt-4">
-                <button onclick="closeAdminModal()" class="py-2 px-4 bg-gray-600 rounded-lg text-white hover:bg-gray-500 transition">Cancel</button>
-                <button onclick="checkAdminCode()" class="py-2 px-4 bg-yellow-600 rounded-lg text-gray-900 font-semibold hover:bg-yellow-500 transition">Submit</button>
-            </div>
-        </div>
     </div>
 
     <div id="message-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
@@ -115,67 +98,87 @@
 
 
     <script>
+        // --- STATIC DATA ---
+        // This is the data that everyone will see. To update the leaderboard,
+        // you must edit this data in the HTML file and redeploy to GitHub Pages.
+        const STATIC_FARMERS_DATA = [
+            {
+                id: 'id-static-1',
+                name: 'The Content King',
+                scores: [
+                    { date: '2025-11-15', score: 9.2 },
+                    { date: '2025-11-14', score: 8.5 },
+                    { date: '2025-11-13', score: 9.0 },
+                    { date: '2025-11-12', score: 8.8 },
+                    { date: '2025-11-11', score: 7.9 },
+                    { date: '2025-11-10', score: 8.4 },
+                ],
+                accolades: ['2025 Season 1 Winner', 'Consistent 8.5+ Output'],
+                farmerOfTheDay: true,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-2',
+                name: 'The Algorithm Whisperer',
+                scores: [
+                    { date: '2025-11-15', score: 7.5 },
+                    { date: '2025-11-14', score: 7.0 },
+                    { date: '2025-11-13', score: 7.8 },
+                    { date: '2025-11-12', score: 8.1 },
+                    { date: '2025-11-11', score: 7.7 },
+                    { date: '2025-11-10', score: 6.9 },
+                ],
+                accolades: ['Fastest Growth Q3', 'Top 5 Consistency'],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: true,
+            },
+            {
+                id: 'id-static-3',
+                name: 'The Viral Vid Vixen',
+                scores: [
+                    { date: '2025-11-15', score: 6.8 },
+                    { date: '2025-11-14', score: 6.2 },
+                    { date: '2025-11-13', score: 6.9 },
+                ],
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-4',
+                name: 'The Clickbait Crusher',
+                scores: [
+                    { date: '2025-11-15', score: 5.5 },
+                    { date: '2025-11-14', score: 6.0 },
+                ],
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            }
+        ];
+
         // --- GLOBAL APP STATE ---
-        const LOCAL_STORAGE_KEY = 'contentRateFarmersData';
-        const ADMIN_CODE = '4463';
-        let farmersData = []; // Will be populated by LocalStorage
-        
-        let currentView = 'leaderboard'; // 'leaderboard', 'profile', 'admin'
+        let farmersData = []; 
+        let currentView = 'leaderboard'; 
         let selectedFarmerId = null;
         let searchTerm = '';
-        let isAdminLoggedIn = false;
 
 
-        // --- LOCAL STORAGE & DATA INITIALIZATION ---
-
-        /**
-         * Loads data from localStorage.
-         * @returns {Array<Object>}
-         */
-        function loadDataFromLocalStorage() {
-            try {
-                const json = localStorage.getItem(LOCAL_STORAGE_KEY);
-                return json ? JSON.parse(json) : [];
-            } catch (e) {
-                console.error("Error loading data from localStorage:", e);
-                return [];
-            }
-        }
+        // --- DATA INITIALIZATION (STATIC) ---
 
         /**
-         * Saves the current farmersData array to localStorage.
-         */
-        function saveDataToLocalStorage() {
-            try {
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(farmersData));
-                console.log("Data saved to localStorage.");
-            } catch (e) {
-                console.error("Error saving data to localStorage:", e);
-                showMessage('Save Error', 'Failed to save data to your browser storage. Check console.');
-            }
-        }
-
-        /**
-         * Generates a simple, unique ID (UUID-like).
-         * @returns {string}
-         */
-        function generateUniqueId() {
-            return 'id-' + Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
-        }
-        
-        /**
-         * Initializes data, ensuring scores are sorted upon load for consistent 5-day average calculation.
+         * Initializes data from the hardcoded STATIC_FARMERS_DATA.
          */
         function initializeData() {
-            farmersData = loadDataFromLocalStorage();
+            // Deep clone the static data to prevent modification of the constant if any logic tries to mutate it
+            farmersData = JSON.parse(JSON.stringify(STATIC_FARMERS_DATA));
             
             // Re-sort scores descending by date on load for consistency
             farmersData.forEach(farmer => {
                 farmer.scores = (farmer.scores || []).sort((a, b) => new Date(b.date) - new Date(a.date));
             });
 
-            // Update the view once data is ready
-            document.getElementById('loading-status').textContent = 'Data loaded. Rendering leaderboard...';
+            document.getElementById('loading-status').textContent = 'Data loaded. Rendering static leaderboard...';
             updateView();
         }
 
@@ -308,7 +311,7 @@
             } else if (farmersData.length === 0) {
                  farmerListHtml = `
                     <p class="text-gray-400 p-8 text-center text-lg">
-                        The Leaderboard is currently empty. Use the Admin Panel to add your first content farmer!
+                        The Leaderboard is currently empty.
                     </p>
                 `;
             } else {
@@ -481,101 +484,12 @@
                 </div>
             `;
         }
-
-        /**
-         * Renders the Admin Panel view.
-         */
-        function renderAdminPanel() {
-            const container = document.getElementById('main-content');
-
-            if (!isAdminLoggedIn) {
-                 container.innerHTML = `<p class="text-red-400 p-8 text-center text-xl">Access Denied. Please log in via the button below.</p>`;
-                 return;
-            }
-
-            // Options for adding scores
-            const farmerOptions = farmersData.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
-            const today = new Date().toISOString().split('T')[0];
-
-            container.innerHTML = `
-                <h2 class="text-3xl font-bold mb-6 text-yellow-400 border-b border-gray-700 pb-3">Admin Panel (SECRET CODE: ${ADMIN_CODE})</h2>
-
-                <button onclick="showLeaderboard()" class="text-yellow-500 hover:text-yellow-400 mb-6 transition duration-150">
-                    <i class="fas fa-arrow-left mr-2"></i>Back to Leaderboard
-                </button>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-                    <div class="bg-gray-700 p-6 rounded-xl">
-                        <h3 class="text-2xl font-semibold mb-4 text-green-400">Add New Content Farmer</h3>
-                        <form id="add-farmer-form" onsubmit="event.preventDefault(); addNewFarmer();">
-                            <label for="new-farmer-name" class="block text-gray-300 mb-2">Farmer Name</label>
-                            <input type="text" id="new-farmer-name" required class="w-full p-3 mb-4 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-green-500 transition">
-
-                            <button type="submit" class="w-full py-3 bg-green-600 rounded-lg text-white font-semibold hover:bg-green-500 transition">
-                                Add Farmer
-                            </button>
-                            <p id="add-farmer-status" class="mt-3 text-sm hidden"></p>
-                        </form>
-                    </div>
-
-                    <div class="bg-gray-700 p-6 rounded-xl">
-                        <h3 class="text-2xl font-semibold mb-4 text-blue-400">Add/Update Daily Score</h3>
-                        <form id="add-score-form" onsubmit="event.preventDefault(); addOrUpdateScore();">
-                            <label for="score-farmer-id" class="block text-gray-300 mb-2">Select Farmer</label>
-                            <select id="score-farmer-id" required class="w-full p-3 mb-4 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 transition">
-                                <option value="">--- Select Farmer ---</option>
-                                ${farmerOptions}
-                            </select>
-
-                            <label for="score-date" class="block text-gray-300 mb-2">Date</label>
-                            <input type="date" id="score-date" value="${today}" required class="w-full p-3 mb-4 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 transition">
-
-                            <label for="score-value" class="block text-gray-300 mb-2">Score (3.0 - 10.0)</label>
-                            <input type="number" id="score-value" min="3.0" max="10.0" step="0.1" required class="w-full p-3 mb-4 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 transition">
-
-                            <button type="submit" class="w-full py-3 bg-blue-600 rounded-lg text-white font-semibold hover:bg-blue-500 transition">
-                                Add/Update Score
-                            </button>
-                            <p id="add-score-status" class="mt-3 text-sm hidden"></p>
-                        </form>
-                    </div>
-
-                    <div class="lg:col-span-2 bg-gray-700 p-6 rounded-xl">
-                        <h3 class="text-2xl font-semibold mb-4 text-red-400">Manage Awards (Content Farmer of the Day/Month)</h3>
-                        <p class="text-gray-400 mb-4">Click a farmer to assign or remove the 'Content Farmer of the Day' award. (Only one can hold the title.)</p>
-                        <div class="flex flex-wrap gap-3">
-                            ${farmersData.map(f => `
-                                <button onclick="assignAward('${f.id}', 'fotd')" class="py-2 px-4 rounded-lg text-sm transition ${f.farmerOfTheDay ? 'bg-red-500 text-white font-bold' : 'bg-gray-600 text-gray-200 hover:bg-gray-500'}">
-                                    FOTD: ${f.name}
-                                </button>
-                            `).join('')}
-                        </div>
-                        <p class="text-gray-400 mt-6 mb-4">Click a farmer to assign or remove the 'Content Farmer of the Month' award.</p>
-                        <div class="flex flex-wrap gap-3">
-                            ${farmersData.map(f => `
-                                <button onclick="assignAward('${f.id}', 'fotm')" class="py-2 px-4 rounded-lg text-sm transition ${f.farmerOfTheMonth ? 'bg-purple-500 text-white font-bold' : 'bg-gray-600 text-gray-200 hover:bg-gray-500'}">
-                                    FOTM: ${f.name}
-                                </button>
-                            `).join('')}
-                        </div>
-                        ${farmersData.length === 0 ? '<p class="text-gray-500 mt-4">Add farmers in section 1 to manage awards.</p>' : ''}
-                    </div>
-                </div>
-            `;
-        }
         
         // --- UI & State Control ---
 
         function updateView() {
-            // Update the Admin button text based on login status
-            const adminBtn = document.getElementById('admin-toggle-button');
-            adminBtn.textContent = isAdminLoggedIn ? 'Admin Logout' : 'Admin Access';
-
             if (currentView === 'profile') {
                 renderProfile(selectedFarmerId);
-            } else if (currentView === 'admin') {
-                renderAdminPanel();
             } else {
                 renderLeaderboard();
             }
@@ -593,206 +507,13 @@
             updateView();
         }
 
-        function showAdminView() {
-            currentView = 'admin';
-            updateView();
-        }
-
         window.handleSearch = function(term) {
             searchTerm = term;
             renderLeaderboard();
         }
 
-        // --- ADMIN MODAL & AUTHENTICATION ---
-
-        window.showAdminModal = function() {
-            if (isAdminLoggedIn) {
-                handleAdminLogout();
-                return;
-            }
-            document.getElementById('admin-modal').classList.remove('hidden');
-        }
-
-        window.closeAdminModal = function() {
-            document.getElementById('admin-modal').classList.add('hidden');
-            document.getElementById('admin-code-input').value = '';
-            document.getElementById('code-error').classList.add('hidden');
-        }
-
-        window.checkAdminCode = function() {
-            const code = document.getElementById('admin-code-input').value;
-            if (code === ADMIN_CODE) {
-                isAdminLoggedIn = true;
-                closeAdminModal();
-                showAdminView();
-            } else {
-                document.getElementById('code-error').classList.remove('hidden');
-            }
-        }
-        
-        function handleAdminLogout() {
-            isAdminLoggedIn = false;
-            showMessage('Admin Logged Out', 'You have successfully logged out of the Admin Panel.');
-            showLeaderboard();
-        }
-
-
-        // --- ADMIN PANEL ACTIONS (Local Storage Integration) ---
-
-        /**
-         * Adds a new farmer object to the local farmersData array.
-         */
-        window.addNewFarmer = function() {
-            const name = document.getElementById('new-farmer-name').value.trim();
-            const statusEl = document.getElementById('add-farmer-status');
-            statusEl.classList.add('hidden'); 
-
-            if (!name) {
-                statusEl.textContent = 'Name cannot be empty.';
-                statusEl.classList.remove('hidden');
-                statusEl.classList.add('text-red-400');
-                return;
-            }
-
-            try {
-                const newFarmer = {
-                    id: generateUniqueId(), // Use local ID generation
-                    name: name,
-                    scores: [],
-                    accolades: [],
-                    farmerOfTheDay: false,
-                    farmerOfTheMonth: false,
-                    createdAt: new Date().toISOString()
-                };
-                
-                farmersData.push(newFarmer);
-                saveDataToLocalStorage();
-                
-                document.getElementById('add-farmer-form').reset();
-                showMessage('Farmer Added', `Successfully added "${name}".`);
-                updateView(); // Rerender to update the options in the Admin Panel
-                
-
-            } catch (e) {
-                console.error("Error adding farmer: ", e);
-                statusEl.textContent = 'Error adding farmer: ' + e.message;
-                statusEl.classList.remove('hidden');
-                statusEl.classList.add('text-red-400');
-            }
-        }
-
-        /**
-         * Adds or updates a score for an existing farmer in the local farmersData array.
-         */
-        window.addOrUpdateScore = function() {
-            const farmerId = document.getElementById('score-farmer-id').value;
-            const date = document.getElementById('score-date').value;
-            const score = parseFloat(document.getElementById('score-value').value);
-            const statusEl = document.getElementById('add-score-status');
-            statusEl.classList.add('hidden'); 
-
-            if (!farmerId || !date || isNaN(score) || score < 3.0 || score > 10.0) {
-                statusEl.textContent = 'Please check all inputs. Score must be between 3.0 and 10.0.';
-                statusEl.classList.remove('hidden');
-                statusEl.classList.add('text-red-400');
-                return;
-            }
-
-            const farmerIndex = farmersData.findIndex(f => f.id === farmerId);
-            if (farmerIndex === -1) return;
-
-            const farmer = farmersData[farmerIndex];
-            const existingScores = farmer.scores || [];
-            const existingScoreIndex = existingScores.findIndex(s => s.date === date);
-
-            const newScore = { date, score: parseFloat(score.toFixed(1)) };
-            let updatedScores;
-            let message;
-
-            if (existingScoreIndex !== -1) {
-                // Update existing score
-                updatedScores = existingScores.map((s, idx) => 
-                    idx === existingScoreIndex ? newScore : s
-                );
-                message = `Updated ${farmer.name}'s score on ${date} to ${score.toFixed(1)}.`;
-            } else {
-                // Add new score
-                updatedScores = [...existingScores, newScore];
-                message = `Added a new score of ${score.toFixed(1)} for ${farmer.name} on ${date}.`;
-            }
-
-            // Sort scores descending by date
-            updatedScores.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            try {
-                // Update the farmer object in the array
-                farmersData[farmerIndex].scores = updatedScores;
-                
-                saveDataToLocalStorage();
-                
-                document.getElementById('add-score-form').reset();
-                showMessage('Score Saved', message);
-                updateView();
-
-            } catch (e) {
-                console.error("Error updating score: ", e);
-                statusEl.textContent = 'Error saving score to local storage: ' + e.message;
-                statusEl.classList.remove('hidden');
-                statusEl.classList.add('text-red-400');
-            }
-        }
-
-        /**
-         * Assigns or clears an award in the local farmersData array.
-         */
-        window.assignAward = function(farmerId, awardType) {
-            const farmerIndex = farmersData.findIndex(f => f.id === farmerId);
-            if (farmerIndex === -1) return;
-
-            let key = '';
-            let awardName = '';
-
-            if (awardType === 'fotd') {
-                key = 'farmerOfTheDay';
-                awardName = 'Content Farmer of the Day';
-            } else if (awardType === 'fotm') {
-                key = 'farmerOfTheMonth';
-                awardName = 'Content Farmer of the Month';
-            } else {
-                return;
-            }
-
-            const isCurrentlyAssigned = farmersData[farmerIndex][key];
-            let message;
-            
-            try {
-                // 1. Clear the award from all farmers who currently hold it (if assigning)
-                if (!isCurrentlyAssigned) {
-                    farmersData.forEach(f => {
-                        if (f[key] === true) {
-                            f[key] = false; // Clear the award
-                        }
-                    });
-                }
-                
-                // 2. Toggle the award on the selected farmer
-                farmersData[farmerIndex][key] = !isCurrentlyAssigned;
-
-                message = !isCurrentlyAssigned
-                    ? `Assigned ${awardName} to ${farmersData[farmerIndex].name}.`
-                    : `Removed ${awardName} from ${farmersData[farmerIndex].name}.`;
-
-                saveDataToLocalStorage();
-                showMessage(awardName + ' Status', message);
-                updateView();
-                
-            } catch (e) {
-                console.error("Error assigning award: ", e);
-                showMessage('Error', 'Failed to update awards in local storage: ' + e.message);
-            }
-        }
-
         // --- GENERAL MODAL (REPLACEMENT FOR ALERT) ---
+        // Kept in case you want to use it for error/info messages
 
         window.showMessage = function(title, body) {
             document.getElementById('message-title').textContent = title;
