@@ -51,7 +51,6 @@
             width: 15%; /* Equal width for bars */
             height: 100%;
             position: relative;
-            /* FIX: Ensure bars are drawn from the bottom up */
             justify-content: flex-end; 
         }
         .bar {
@@ -131,7 +130,7 @@
         const SCORE_RANGE_MIN = 3.0;
         const SCORE_RANGE_MAX = 10.0;
         
-        // Extended/Updated Data Set (FIXED: Removed syntax errors)
+        // Extended/Updated Data Set 
         const STATIC_FARMERS_DATA = [
             {
                 id: 'id-static-1',
@@ -270,7 +269,144 @@
                 farmerOfTheDay: false,
                 farmerOfTheMonth: false,
             },
-        ]; // FIXED: Removed duplicate '},' closure.
+            
+            {
+                id: 'id-static-9',
+                name: 'Chayane',
+                scores: [
+                    { date: '2025-11-21', score: 8.1 },
+                    { date: '2025-11-20', score: 8.4 },
+                    { date: '2025-11-19', score: 6.5 },
+                    { date: '2025-11-18', score: 6.3 },
+                    { date: '2025-11-17', score: 8.5 },
+                    { date: '2025-11-14', score: 7.8 },
+                    { date: '2025-11-13', score: 7.3 },
+                    { date: '2025-11-12', score: 5.9 },
+                    { date: '2025-11-11', score: 7.3 },
+                    { date: '2025-11-10', score: 6.3 },
+                    
+                ], // Total 25.8 / 4 = 6.45 (Grade D)
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-10',
+                name: 'Jawad',
+                scores: [
+                    { date: '2025-11-21', score: 6.8 },
+                    { date: '2025-11-17', score: 6.0 },
+                    { date: '2025-11-14', score: 6.4 },
+                ], // Total 19.2 / 3 = 6.40 (Grade D)
+                accolades: ['Online-Only Content Streamer'],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-11',
+                name: 'Lina',
+                scores: [
+                    { date: '2025-11-21', score: 7.7 },
+                    { date: '2025-11-20', score: 6.0 },
+                    { date: '2025-11-19', score: 5.7 },
+                    { date: '2025-11-18', score: 6.7 },
+                    { date: '2025-11-17', score: 5.9 },
+                    { date: '2025-11-14', score: 5.6 },
+                    { date: '2025-11-13', score: 6.9 },
+                    { date: '2025-11-12', score: 5.9 },
+                    { date: '2025-11-11', score: 5.9 },
+                    { date: '2025-11-10', score: 5.6 },
+                ], 
+                accolades: ['Most Consistent Performance'],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-12',
+                name: 'Naim',
+                scores: [
+                    { date: '2025-11-21', score: 5.9 },
+                    { date: '2025-11-20', score: 7.5 },
+                    { date: '2025-11-19', score: 6.5 },
+                    { date: '2025-11-18', score: 6.4 },
+                    { date: '2025-11-17', score: 6.9 },
+                    { date: '2025-11-14', score: 6.3 },
+                    { date: '2025-11-13', score: 7.1 },
+                    { date: '2025-11-12', score: 7.9 },
+                    { date: '2025-11-11', score: 9.2 },
+                    { date: '2025-11-10', score: 5.8 },
+                    
+                ], 
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-13',
+                name: 'Bargach',
+                scores: [
+                    { date: '2025-11-21', score: 6.7 },
+                    { date: '2025-11-20', score: 7.2 },
+                    { date: '2025-11-19', score: 8.4 },
+                    { date: '2025-11-18', score: 7.5 },
+                    { date: '2025-11-17', score: 6.6 },
+                    { date: '2025-11-14', score: 5.4 },
+                    { date: '2025-11-13', score: 6.4 },
+                    { date: '2025-11-12', score: 7.8 },
+                ], 
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-14',
+                name: 'Jybril',
+                scores: [
+                    { date: '2025-11-21', score: 6.3 },
+                    { date: '2025-11-20', score: 7.0 },
+                    { date: '2025-11-19', score: 6.7 },
+                    { date: '2025-11-18', score: 7.0 },
+                    { date: '2025-11-17', score: 8.8 },
+                ], 
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-15',
+                name: 'Rif',
+                scores: [
+                    { date: '2025-11-21', score: 5.7 },
+                    { date: '2025-11-20', score: 6.6 },
+                    { date: '2025-11-19', score: 7.7 },
+                    { date: '2025-11-18', score: 6.8 },
+                    { date: '2025-11-17', score: 6.5 },
+                    { date: '2025-11-14', score: 7.0 },
+                    { date: '2025-11-13', score: 8.8 },
+                    { date: '2025-11-12', score: 6.8 },
+                    { date: '2025-11-11', score: 6.8 },
+                ], 
+                accolades: ['3x Content Farmer Of the Month'],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-16',
+                name: 'Maachow',
+                scores: [
+                    { date: '2025-11-21', score: 6.4 },
+                    { date: '2025-11-20', score: 6.9 },
+                    { date: '2025-11-19', score: 6.6 },
+                    { date: '2025-11-18', score: 7.9 },
+                    { date: '2025-11-17', score: 7.2 },
+                    { date: '2025-11-14', score: 6.1 },
+                    { date: '2025-11-13', score: 6.1 },
+                ], 
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+        ]; 
 
         let allFarmers = [];
         let currentView = 'leaderboard';
