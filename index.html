@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ContentRate Scoreboard</title>
-    <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         /* Custom CSS for dark theme and visualization */
@@ -125,7 +123,6 @@
 <body class="p-4 md:p-8">
 
     <div class="max-w-4xl mx-auto" id="app-container">
-        <!-- Content will be injected here by JavaScript -->
         <p class="text-center text-gray-500 mt-20">Loading ContentRate Data...</p>
     </div>
 
@@ -134,13 +131,12 @@
         const SCORE_RANGE_MIN = 3.0;
         const SCORE_RANGE_MAX = 10.0;
         
-        // Extended/Updated Data Set (as implied by the history list screenshot)
+        // Extended/Updated Data Set (FIXED: Removed syntax errors)
         const STATIC_FARMERS_DATA = [
             {
                 id: 'id-static-1',
                 name: 'Arwa',
                 scores: [
-                    // Added more recent dates for Arwa, as seen in the image
                     { date: '2025-11-21', score: 9.3 }, 
                     { date: '2025-11-20', score: 8.0 },
                     { date: '2025-11-19', score: 9.9 },
@@ -200,7 +196,7 @@
                 farmerOfTheDay: false,
                 farmerOfTheMonth: false,
             },
-            // Milo data
+            // Milo data (IMPROVED: Sorted scores by date descending)
             {
                 id: 'id-static-5',
                 name: 'Milo',
@@ -250,9 +246,9 @@
                 accolades: ['2x Content Farmer of the Week'],
                 farmerOfTheDay: false,
                 farmerOfTheMonth: false,
-            },    
-                
-                {
+            },  
+            // Omar data
+            {
                 id: 'id-static-8', 
                 name: 'Omar',      
                 scores: [
@@ -274,8 +270,7 @@
                 farmerOfTheDay: false,
                 farmerOfTheMonth: false,
             },
-            },
-        ];
+        ]; // FIXED: Removed duplicate '},' closure.
 
         let allFarmers = [];
         let currentView = 'leaderboard';
@@ -285,14 +280,7 @@
         // --- GRADE FUNCTIONS (The Performance Grade Upgrade) ---
 
         function calculateGrade(average) {
-            // New Grading Scale implementation:
-            // A+ = 8.0+
-            // A = 7.5 to 7.9
-            // B = 7.0 to 7.4
-            // C = 6.5 to 6.9
-            // D = 6.0 to 6.4
-            // E = < 6.0 (5.9-)
-
+            // Grading Scale: A+ = 8.0+, A = 7.5-7.9, B = 7.0-7.4, C = 6.5-6.9, D = 6.0-6.4, E = < 6.0
             if (average >= 8.0) return 'A+';
             if (average >= 7.5) return 'A';
             if (average >= 7.0) return 'B';
@@ -318,7 +306,7 @@
         function initializeData() {
             allFarmers = STATIC_FARMERS_DATA.map(farmer => {
                 
-                // FIX: Ensure the primary scores list is always sorted newest to oldest.
+                // Ensure the primary scores list is always sorted newest to oldest.
                 const sortedScores = farmer.scores
                     .sort((a, b) => b.date.localeCompare(a.date)); // descending date order
 
@@ -500,14 +488,14 @@
                 .slice(0, 5) // Take the 5 newest scores
                 .sort((a, b) => a.date.localeCompare(b.date)); // Sort them ascending for chart display
             
-
             const numScores = chartScores.length;
             
             // --- Bar Chart Generation ---
             const overallRange = SCORE_RANGE_MAX - SCORE_RANGE_MIN;
-            // Calculate average line position relative to the chart range (3.0 to 10.0)
+            
+            // FIXED: Calculate average line position relative to the chart range (3.0 to 10.0)
             const normalizedAvg = (farmer.currentAverage - SCORE_RANGE_MIN) / overallRange;
-            const avgLineHeight = normalizedAvg * 100; 
+            const avgLineHeight = Math.max(0, normalizedAvg * 100); // Ensure non-negative height
 
             const barsHtml = chartScores.map(s => {
                 // FIX: Clamp score to SCORE_RANGE_MIN to prevent negative bar heights (visual bug)
@@ -515,8 +503,8 @@
                 const normalizedScore = (clampedScore - SCORE_RANGE_MIN) / overallRange;
 
                 // Bar height is calculated as a percentage of the chart container height
-                const barHeight = normalizedScore * 100; 
-
+                const barHeight = Math.max(1, normalizedScore * 100); // Set minimum height for visibility
+                
                 // Format the date to be shorter for mobile view
                 const dateShort = s.date.substring(5); // e.g., '11-14'
 
@@ -568,7 +556,7 @@
                         </div>
                         <div class="p-4 bg-gray-700 rounded-lg">
                             <span class="block text-lg font-medium text-gray-400">Overall Average</span>
-                            <span class="block text-4xl font-bold ${getScoreColorClass(farmer.currentAverage)} text-white mt-1">${farmer.currentAverage.toFixed(2)}</span>
+                            <span class="block text-4xl font-bold ${getGradeDisplayClass(farmer.overallGrade)} text-white mt-1">${farmer.currentAverage.toFixed(2)}</span>
                         </div>
                         <div class="p-4 bg-gray-700 rounded-lg">
                             <span class="block text-lg font-medium text-gray-400">Performance Grade</span>
@@ -621,4 +609,3 @@
     </script>
 </body>
 </html>
-
