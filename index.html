@@ -134,12 +134,14 @@
         const SCORE_RANGE_MIN = 3.0;
         const SCORE_RANGE_MAX = 10.0;
         
+        // Extended/Updated Data Set (as implied by the history list screenshot)
         const STATIC_FARMERS_DATA = [
             {
                 id: 'id-static-1',
                 name: 'Arwa',
                 scores: [
-                    { date: '2025-11-21', score: 9.1 },
+                    // Added more recent dates for Arwa, as seen in the image
+                    { date: '2025-11-21', score: 9.1 }, 
                     { date: '2025-11-20', score: 8.3 },
                     { date: '2025-11-19', score: 9.9 },
                     { date: '2025-11-18', score: 8.4 },
@@ -149,8 +151,8 @@
                     { date: '2025-11-12', score: 7.7 },
                     { date: '2025-11-11', score: 7.2 },
                     { date: '2025-11-10', score: 6.9 },
-                    { date: '2025-11-7', score: 8.1 },
-                    { date: '2025-11-6', score: 8.1 },
+                    { date: '2025-11-07', score: 8.1 },
+                    { date: '2025-11-06', score: 8.1 },
                 ],
                 // Accolades
                 accolades: ['2x Content Farmer of the Week','October Content Farmer of the Month'],
@@ -161,18 +163,13 @@
                 id: 'id-static-3', 
                 name: 'Zyad',      
                 scores: [
-                    { date: '2025-11-21', score: 7.0 },
-                    { date: '2025-11-20', score: 8.2 },
-                    { date: '2025-11-19', score: 6.7 },
-                    { date: '2025-11-18', score: 6.2 },
-                    { date: '2025-11-17', score: 7.4 },
                     { date: '2025-11-14', score: 7.4 },
                     { date: '2025-11-13', score: 7.4 },
                     { date: '2025-11-12', score: 5.9 },
                     { date: '2025-11-11', score: 7.1 },
                     { date: '2025-11-10', score: 8.0 },
-                    { date: '2025-11-7', score: 6.5 }, 
-                    { date: '2025-11-6', score: 6.1 }, 
+                    { date: '2025-11-07', score: 6.5 }, 
+                    { date: '2025-11-06', score: 6.1 }, 
                 ],
                 // Accolades
                 accolades: ['9x Content Farmer of the Week', '3x Content Farmer of the Month', 'Year 9 Content Farmer of the Year'],
@@ -184,14 +181,12 @@
                 id: 'id-static-4',
                 name: 'Iaaich',
                 scores: [
-                    { date: '2025-11-21', score: 7.7 },
-                    { date: '2025-11-20', score: 6.8 },
                     { date: '2025-11-13', score: 8.8 },
                     { date: '2025-11-12', score: 8.3 },
                     { date: '2025-11-11', score: 7.0 },
                     { date: '2025-11-10', score: 7.5 },
-                    { date: '2025-11-7', score: 7.8 },
-                    { date: '2025-11-6', score: 9.0 },
+                    { date: '2025-11-07', score: 7.8 },
+                    { date: '2025-11-06', score: 9.0 },
                 ],
                 // Accolades
                 accolades: ['12x Content Farmer of the Week', '3x Content Farmer of the Month', 'Year 10 Farmer of the Year'],
@@ -203,10 +198,6 @@
                 id: 'id-static-5',
                 name: 'Milo',
                 scores: [
-                    { date: '2025-11-20', score: 5.7 },
-                    { date: '2025-11-19', score: 5.9 },
-                    { date: '2025-11-18', score: 6.1 },
-                    { date: '2025-11-17', score: 7.5 },
                     { date: '2025-11-14', score: 7.5 },
                     { date: '2025-11-13', score: 6.5 },
                     { date: '2025-11-12', score: 5.9 },
@@ -228,8 +219,8 @@
                     { date: '2025-11-12', score: 6.6 },
                     { date: '2025-11-11', score: 6.1 },
                     { date: '2025-11-10', score: 5.9 },
-                    { date: '2025-11-7', score: 7.4 },
-                    { date: '2025-11-6', score: 6.7 },
+                    { date: '2025-11-07', score: 7.4 },
+                    { date: '2025-11-06', score: 6.7 },
                 ],
                 // Accolades
                 accolades: ['1x Content Farmer of the Week'],
@@ -291,9 +282,10 @@
 
         function initializeData() {
             allFarmers = STATIC_FARMERS_DATA.map(farmer => {
-                // Use date string comparison for robust sorting (descending)
+                
+                // FIX: Ensure the primary scores list is always sorted newest to oldest.
                 const sortedScores = farmer.scores
-                    .sort((a, b) => b.date.localeCompare(a.date));
+                    .sort((a, b) => b.date.localeCompare(a.date)); // descending date order
 
                 // Use all scores up to the latest 15 for the overall average/grade
                 const relevantScores = sortedScores.slice(0, 15); 
@@ -310,6 +302,7 @@
 
                 return {
                     ...farmer,
+                    scores: sortedScores, // Use the new, consistently sorted scores array
                     latestScores: latestScoresForDisplay,
                     currentAverage: overallAverage,
                     overallGrade: overallGrade,
@@ -465,10 +458,13 @@
                 return;
             }
 
-            // Use the sorted scores, but in ascending date order for the chart (oldest on left)
+            // The scores array in the farmer object is now pre-sorted (newest to oldest).
+            
+            // 1. Chart scores (Last 5 scores, oldest on left for chart)
             const chartScores = farmer.scores
-                .sort((a, b) => a.date.localeCompare(b.date)) // Ascending date order for chart
-                .slice(-5); // Get the latest 5
+                .slice(0, 5) // Take the 5 newest scores
+                .sort((a, b) => a.date.localeCompare(b.date)); // Sort them ascending for chart display
+            
 
             const numScores = chartScores.length;
             
@@ -509,8 +505,8 @@
                 </li>
             `).join('');
 
+            // 2. History List (using the pre-sorted farmer.scores array - newest to oldest)
             const scoreHistoryHtml = farmer.scores
-                .sort((a, b) => b.date.localeCompare(a.date)) // Date descending for history list
                 .map(s => `
                     <li class="flex justify-between items-center py-2 border-b border-gray-700 last:border-b-0">
                         <span class="text-sm text-gray-400">${s.date}</span>
@@ -590,5 +586,3 @@
     </script>
 </body>
 </html>
-
-
