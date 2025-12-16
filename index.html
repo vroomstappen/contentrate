@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The ContentRate Scoreboard</title>
+    <title>The ContentRate Scoreboard - Awards Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -111,6 +111,23 @@
             font-weight: 700;
         }
 
+        /* Trend Arrows */
+        .trend-up { color: #34d399; } /* Green */
+        .trend-down { color: #f87171; } /* Red */
+        .trend-equal { color: #94a3b8; } /* Gray */
+
+        /* Special Banner Animation */
+        @keyframes shine {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .special-banner {
+            background: linear-gradient(270deg, #4f46e5, #9333ea, #db2777);
+            background-size: 200% 200%;
+            animation: shine 4s ease infinite;
+        }
+
         /* Responsive Grid for Leaderboard */
         @media (max-width: 640px) {
             .leaderboard-grid {
@@ -119,10 +136,23 @@
         }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="bg-slate-900 text-slate-200">
 
-    <div class="max-w-4xl mx-auto" id="app-container">
-        <p class="text-center text-gray-500 mt-20">Loading ContentRate Data...</p>
+    <div class="special-banner w-full text-white py-3 px-4 text-center shadow-lg sticky top-0 z-50">
+        <p class="font-bold text-sm sm:text-base">
+            <i class="fas fa-trophy text-yellow-300 mr-2"></i> 
+            The Content Awards Voting is NOW OPEN! 
+            <i class="fas fa-trophy text-yellow-300 ml-2 mr-4"></i>
+            <a href="https://forms.gle/h9Apq6TTVCexV2zk8" target="_blank" class="inline-block mt-2 sm:mt-0 bg-white text-indigo-900 px-4 py-1 rounded-full text-sm font-extrabold hover:bg-yellow-300 transition duration-200 transform hover:scale-105">
+                VOTE HERE <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </p>
+    </div>
+
+    <div class="p-4 md:p-8">
+        <div class="max-w-4xl mx-auto" id="app-container">
+            <p class="text-center text-gray-500 mt-20">Loading ContentRate Data...</p>
+        </div>
     </div>
 
     <script>
@@ -211,7 +241,7 @@
                 farmerOfTheDay: false,
                 farmerOfTheMonth: false,
             },
-            // Milo data (IMPROVED: Sorted scores by date descending)
+            // Milo data 
             {
                 id: 'id-static-5',
                 name: 'Milo',
@@ -322,7 +352,7 @@
                     { date: '2025-11-11', score: 7.3 },
                     { date: '2025-11-10', score: 6.3 },
                     
-                ], // Total 25.8 / 4 = 6.45 (Grade D)
+                ], 
                 accolades: [],
                 farmerOfTheDay: false,
                 farmerOfTheMonth: false,
@@ -334,7 +364,7 @@
                     { date: '2025-11-21', score: 6.8 },
                     { date: '2025-11-17', score: 6.0 },
                     { date: '2025-11-14', score: 6.4 },
-                ], // Total 19.2 / 3 = 6.40 (Grade D)
+                ], 
                 accolades: ['Online-Only Content Farmer'],
                 farmerOfTheDay: false,
                 farmerOfTheMonth: false,
@@ -537,29 +567,64 @@
                 const sortedScores = farmer.scores
                     .sort((a, b) => b.date.localeCompare(a.date)); // descending date order
 
-                // Use all scores up to the latest 15 for the overall average/grade
+                // 1. Calculate Statistics for Current State (Latest 15)
                 const relevantScores = sortedScores.slice(0, 15); 
-
                 const totalScore = relevantScores.reduce((sum, s) => sum + s.score, 0);
                 const average = relevantScores.length > 0 ? totalScore / relevantScores.length : 0;
                 const overallAverage = parseFloat(average.toFixed(2));
-                
-                // CALCULATE THE GRADE
                 const overallGrade = calculateGrade(overallAverage);
+
+                // 2. Trend Logic: Calculate Average BEFORE the latest score (Previous State)
+                let trendDirection = 'equal'; // default
+                if (sortedScores.length > 1) {
+                    const previousScores = sortedScores.slice(1, 16); // Scores 1-15 (skipping 0)
+                    const prevTotal = previousScores.reduce((sum, s) => sum + s.score, 0);
+                    const prevAvg = previousScores.length > 0 ? prevTotal / previousScores.length : 0;
+                    
+                    if (overallAverage > prevAvg) {
+                        trendDirection = 'up';
+                    } else if (overallAverage < prevAvg) {
+                        trendDirection = 'down';
+                    }
+                }
+
+                // 3. Fire Streak Logic
+                // Count consecutive scores >= 7.0 starting from index 0
+                let streakCount = 0;
+                for (let i = 0; i < sortedScores.length; i++) {
+                    if (sortedScores[i].score >= 7.0) {
+                        streakCount++;
+                    } else {
+                        break; // Streak broken
+                    }
+                }
+
+                let fireEmojis = '';
+                if (streakCount >= 3) {
+                    // NEW LOGIC:
+                    // 3 scores = 1 fire
+                    // 6 scores = 2 fires
+                    // 9 scores = 3 fires
+                    // Formula: Floor(streak / 3)
+                    const numFires = Math.floor(streakCount / 3);
+                    fireEmojis = '🔥'.repeat(numFires);
+                }
 
                 // Use the already sorted list for the latest 5 scores
                 const latestScoresForDisplay = sortedScores.slice(0, 5); 
 
                 return {
                     ...farmer,
-                    scores: sortedScores, // Use the new, consistently sorted scores array
+                    scores: sortedScores, 
                     latestScores: latestScoresForDisplay,
                     currentAverage: overallAverage,
                     overallGrade: overallGrade,
+                    trend: trendDirection,
+                    fireEmojis: fireEmojis
                 };
             });
 
-            // Calculate ranks: Sort first by Grade (using gradeOrder value), then by Average for ties
+            // Calculate ranks
             const gradeOrder = { 'A+': 6, 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1, 'N/A': 0 };
 
             allFarmers.sort((a, b) => {
@@ -567,9 +632,9 @@
                 const gradeB = gradeOrder[b.overallGrade] || 0;
                 
                 if (gradeB !== gradeA) {
-                    return gradeB - gradeA; // Sort by grade descending
+                    return gradeB - gradeA; 
                 }
-                return b.currentAverage - a.currentAverage; // Sort by average descending for ties
+                return b.currentAverage - a.currentAverage; 
             });
 
             allFarmers = allFarmers.map((farmer, index) => {
@@ -583,18 +648,18 @@
         }
 
         function getScoreColorClass(score) {
-            // 9.0-10.0 = purple
             if (score >= 9.0) return 'score-purple';
-            // 8.0-8.9 = light blue
             if (score >= 8.0) return 'score-lightblue';
-            // 7.0-7.9 = green
             if (score >= 7.0) return 'score-green';
-            // 6.5-6.9 = yellow
             if (score >= 6.5) return 'score-yellow';
-            // 6.0-6.4 = orange
             if (score >= 6.0) return 'score-orange';
-            // 5.9- = red (everything below 6.0)
             return 'score-red';
+        }
+
+        function getTrendIcon(direction) {
+            if (direction === 'up') return '<i class="fas fa-arrow-up trend-up"></i>';
+            if (direction === 'down') return '<i class="fas fa-arrow-down trend-down"></i>';
+            return '<i class="fas fa-minus trend-equal"></i>';
         }
         
         // --- VIEW CONTROLLERS ---
@@ -630,7 +695,7 @@
             const container = document.getElementById('app-container');
             const filteredFarmers = allFarmers
                 .filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                .sort((a, b) => a.rank - b.rank); // Ensure sorted by rank
+                .sort((a, b) => a.rank - b.rank); 
 
             const farmerListHtml = filteredFarmers.map(farmer => `
                 <div 
@@ -640,7 +705,10 @@
                     <div class="font-bold text-2xl text-indigo-400">#${farmer.rank}</div>
                     
                     <div class="col-span-2 sm:col-span-1 flex flex-col">
-                        <span class="font-semibold text-lg">${farmer.name}</span>
+                        <span class="font-semibold text-lg flex items-center gap-2">
+                            ${farmer.name} 
+                            <span class="text-lg">${farmer.fireEmojis}</span>
+                        </span>
                         <div class="text-xs mt-1 space-x-1">
                             ${farmer.farmerOfTheDay ? '<span class="px-2 py-0.5 bg-yellow-600 rounded-full text-xs font-medium text-gray-900">FOTD</span>' : ''}
                             ${farmer.farmerOfTheMonth ? '<span class="px-2 py-0.5 bg-indigo-600 rounded-full text-xs font-medium text-white">FOTM</span>' : ''}
@@ -650,8 +718,13 @@
                     
                     <div class="flex flex-col items-center">
                         <span class="text-sm text-gray-400">Overall Avg</span>
-                        <div class="${getScoreColorClass(farmer.currentAverage)} score-value-box mt-1">
-                            ${farmer.currentAverage.toFixed(2)}
+                        <div class="flex items-center gap-2 mt-1">
+                            <div class="${getScoreColorClass(farmer.currentAverage)} score-value-box">
+                                ${farmer.currentAverage.toFixed(2)}
+                            </div>
+                            <div class="text-sm">
+                                ${getTrendIcon(farmer.trend)}
+                            </div>
                         </div>
                     </div>
 
@@ -717,23 +790,17 @@
             
             const numScores = chartScores.length;
             
-            // --- Bar Chart Generation ---
+            // Bar Chart Generation
             const overallRange = SCORE_RANGE_MAX - SCORE_RANGE_MIN;
             
-            // FIXED: Calculate average line position relative to the chart range (3.0 to 10.0)
             const normalizedAvg = (farmer.currentAverage - SCORE_RANGE_MIN) / overallRange;
-            const avgLineHeight = Math.max(0, normalizedAvg * 100); // Ensure non-negative height
+            const avgLineHeight = Math.max(0, normalizedAvg * 100); 
 
             const barsHtml = chartScores.map(s => {
-                // FIX: Clamp score to SCORE_RANGE_MIN to prevent negative bar heights (visual bug)
                 const clampedScore = Math.max(s.score, SCORE_RANGE_MIN);
                 const normalizedScore = (clampedScore - SCORE_RANGE_MIN) / overallRange;
-
-                // Bar height is calculated as a percentage of the chart container height
-                const barHeight = Math.max(1, normalizedScore * 100); // Set minimum height for visibility
-                
-                // Format the date to be shorter for mobile view
-                const dateShort = s.date.substring(5); // e.g., '11-14'
+                const barHeight = Math.max(1, normalizedScore * 100); 
+                const dateShort = s.date.substring(5); 
 
                 return `
                     <div class="bar-wrapper group">
@@ -755,7 +822,7 @@
                 </li>
             `).join('');
 
-            // 2. History List (using the pre-sorted farmer.scores array - newest to oldest)
+            // 2. History List 
             const scoreHistoryHtml = farmer.scores
                 .map(s => `
                     <li class="flex justify-between items-center py-2 border-b border-gray-700 last:border-b-0">
@@ -771,7 +838,10 @@
                     <button onclick="showLeaderboard()" class="flex items-center text-indigo-400 hover:text-indigo-300 transition duration-150">
                         <i class="fas fa-arrow-left mr-2"></i> Back to Leaderboard
                     </button>
-                    <h1 class="text-3xl font-extrabold text-white">${farmer.name}'s Profile</h1>
+                    <h1 class="text-3xl font-extrabold text-white">
+                        ${farmer.name}'s Profile
+                        <span class="ml-2 text-2xl">${farmer.fireEmojis}</span>
+                    </h1>
                 </div>
 
                 <div class="bg-gray-800 p-6 rounded-xl shadow-2xl">
@@ -783,7 +853,10 @@
                         </div>
                         <div class="p-4 bg-gray-700 rounded-lg">
                             <span class="block text-lg font-medium text-gray-400">Overall Average</span>
-                            <span class="block text-4xl font-bold ${getGradeDisplayClass(farmer.overallGrade)} text-white mt-1">${farmer.currentAverage.toFixed(2)}</span>
+                            <div class="flex items-center justify-center gap-3 mt-1">
+                                <span class="text-4xl font-bold ${getGradeDisplayClass(farmer.overallGrade)} text-white">${farmer.currentAverage.toFixed(2)}</span>
+                                <span class="text-2xl">${getTrendIcon(farmer.trend)}</span>
+                            </div>
                         </div>
                         <div class="p-4 bg-gray-700 rounded-lg">
                             <span class="block text-lg font-medium text-gray-400">Performance Grade</span>
@@ -836,6 +909,3 @@
     </script>
 </body>
 </html>
-
-
-
