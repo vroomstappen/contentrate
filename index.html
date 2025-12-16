@@ -1,451 +1,523 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The ContentRate Scoreboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color:#0f172a; color:#e2e8f0; }
-        .score-value-box { display:inline-flex; justify-content:center; align-items:center; padding:0.25rem 0.6rem; border-radius:0.5rem; font-weight:700; font-size:1rem; min-width:3rem; transition:background-color 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
-        .score-purple { background-color:#a78bfa; color:#1e1b4b; }
-        .score-lightblue { background-color:#38bdf8; color:#0c4a6e; }
-        .score-green { background-color:#34d399; color:#064e3b; }
-        .score-yellow { background-color:#fde047; color:#713f12; }
-        .score-orange { background-color:#fb923c; color:#7c2d12; }
-        .score-red { background-color:#f87171; color:#7f1d1d; }
+        /* Custom CSS for dark theme and visualization */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0; /* Slate 200 */
+        }
 
-        .bar-chart-container { height:300px; display:flex; align-items:flex-end; justify-content:space-around; padding:10px; border-bottom:2px solid #334155; gap:10px; }
-        .bar-wrapper { display:flex; flex-direction:column; align-items:center; width:15%; height:100%; position:relative; justify-content:flex-end; }
-        .bar { width:100%; border-radius:8px 8px 0 0; transition:height 0.5s ease-out; min-height:5px; position:relative; box-shadow:0 -3px 6px rgba(0,0,0,0.2); }
-        .bar-label { position:absolute; top:-24px; left:50%; transform:translateX(-50%); font-size:0.75rem; font-weight:600; color:#cbd5e1; white-space:nowrap; }
-        .bar-date { font-size:0.75rem; color:#94a3b8; margin-top:5px; white-space:nowrap; }
+        /* --- Score Box Styling --- */
+        .score-value-box {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0.25rem 0.6rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            font-size: 1rem;
+            min-width: 3rem;
+            transition: background-color 0.2s;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        .score-purple { background-color: #a78bfa; color: #1e1b4b; } /* High Score */
+        .score-lightblue { background-color: #38bdf8; color: #0c4a6e; }
+        .score-green { background-color: #34d399; color: #064e3b; }
+        .score-yellow { background-color: #fde047; color: #713f12; }
+        .score-orange { background-color: #fb923c; color: #7c2d12; }
+        .score-red { background-color: #f87171; color: #7f1d1d; } /* Low Score */
 
-        .avg-bar-line { position:absolute; left:0; right:0; height:2px; background-color:#facc15; z-index:10; pointer-events:none; transition:bottom 0.5s ease-out; }
-        .avg-bar-line::before { content:''; position:absolute; left:-5px; top:-3px; width:8px; height:8px; border-radius:50%; background-color:#facc15; }
-        .avg-bar-label { position:absolute; right:0; top:-18px; background-color:#facc15; color:#1f2937; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:700; }
+        /* --- Bar Chart Styling --- */
+        .bar-chart-container {
+            height: 300px; /* Fixed height for the chart area */
+            display: flex;
+            align-items: flex-end; /* Bars start from the bottom */
+            justify-content: space-around;
+            padding: 10px;
+            border-bottom: 2px solid #334155; /* Slate 700 */
+            gap: 10px;
+        }
+        .bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 15%; /* Equal width for bars */
+            height: 100%;
+            position: relative;
+            justify-content: flex-end; 
+        }
+        .bar {
+            width: 100%;
+            border-radius: 8px 8px 0 0;
+            transition: height 0.5s ease-out;
+            min-height: 5px; /* Minimum visual height */
+            position: relative;
+            box-shadow: 0 -3px 6px rgba(0, 0, 0, 0.2);
+        }
+        .bar-label {
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #cbd5e1; /* Slate 300 */
+            white-space: nowrap;
+        }
+        .bar-date {
+            font-size: 0.75rem;
+            color: #94a3b8; /* Slate 400 */
+            margin-top: 5px;
+            white-space: nowrap;
+        }
 
-        @media (max-width:640px) { .leaderboard-grid { grid-template-columns: 1fr 3fr 2fr 2fr; } }
+        /* Average Line */
+        .avg-bar-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #facc15; /* Yellow 400 */
+            z-index: 10;
+            pointer-events: none;
+            transition: bottom 0.5s ease-out;
+        }
+        .avg-bar-line::before {
+            content: '';
+            position: absolute;
+            left: -5px;
+            top: -3px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #facc15;
+        }
+        .avg-bar-label {
+            position: absolute;
+            right: 0;
+            top: -18px;
+            background-color: #facc15;
+            color: #1f2937; /* Dark text */
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
 
-        .modal-backdrop { background: rgba(2,6,23,0.7); position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:50; }
-        .modal-card { background:#0b1220; border:1px solid #222a36; padding:18px; border-radius:12px; max-width:720px; width:95%; color:#e6eef8; box-shadow:0 10px 30px rgba(2,6,23,0.7); }
+        /* Responsive Grid for Leaderboard */
+        @media (max-width: 640px) {
+            .leaderboard-grid {
+                grid-template-columns: 1fr 3fr 2fr 2fr; /* Rank | Name/Status | Avg | Latest */
+            }
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
+
     <div class="max-w-4xl mx-auto" id="app-container">
         <p class="text-center text-gray-500 mt-20">Loading ContentRate Data...</p>
     </div>
 
     <script>
-        // CONFIG
+        // --- DATA STRUCTURE & GLOBALS ---
         const SCORE_RANGE_MIN = 3.0;
         const SCORE_RANGE_MAX = 10.0;
-        const AVERAGE_LOOKBACK = 14; // last 14 scores
-        const APP_VERSION = '1.1';
-        const LAST_UPDATED = 'November 28, 2025';
-        const DISCORD_LINK = 'https://discord.gg/fX79xgwHzP';
-
-        // DATA
+        
+        // Extended/Updated Data Set 
         const STATIC_FARMERS_DATA = [
-    {
-        id: 'id-static-1',
-        name: 'Arwa',
-        scores: [
-            { date: '2025-12-02', score: 9.0 },
-            { date: '2025-11-26', score: 9.4 },
-            { date: '2025-11-25', score: 7.8 },
-            { date: '2025-11-24', score: 7.4 },
-            { date: '2025-11-21', score: 9.3 },
-            { date: '2025-11-20', score: 8.0 },
-            { date: '2025-11-19', score: 9.9 },
-            { date: '2025-11-18', score: 8.4 },
-            { date: '2025-11-17', score: 7.1 },
-            { date: '2025-11-14', score: 9.1 },
-            { date: '2025-11-13', score: 8.5 },
-            { date: '2025-11-12', score: 7.7 },
-            { date: '2025-11-11', score: 7.2 },
-            { date: '2025-11-10', score: 6.9 },
-            { date: '2025-11-07', score: 8.1 },
-            { date: '2025-11-06', score: 8.1 }
-        ],
-        accolades: [
-            '3x Content Farmer of the Week',
-            'October Content Farmer of the Month'
-        ],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    },
+            {
+                id: 'id-static-1',
+                name: 'Arwa',
+                scores: [
+                    { date: '2025-12-15', score: 8.1 },
+                    { date: '2025-11-28', score: 7.4 },
+                    { date: '2025-11-27', score: 9.2 },
+                    { date: '2025-11-26', score: 9.4 },
+                    { date: '2025-11-25', score: 7.8 },
+                    { date: '2025-11-24', score: 7.4 },
+                    { date: '2025-11-21', score: 9.3 }, 
+                    { date: '2025-11-20', score: 8.0 },
+                    { date: '2025-11-19', score: 9.9 },
+                    { date: '2025-11-18', score: 8.4 },
+                    { date: '2025-11-17', score: 7.1 },
+                    { date: '2025-11-14', score: 9.1 },
+                    { date: '2025-11-13', score: 8.5 },
+                    { date: '2025-11-12', score: 7.7 },
+                    { date: '2025-11-11', score: 7.2 },
+                    { date: '2025-11-10', score: 6.9 },
+                    { date: '2025-11-07', score: 8.1 },
+                    { date: '2025-11-06', score: 8.1 },
+                ],
+                // Accolades
+                accolades: ['3x Content Farmer of the Week','October Content Farmer of the Month'],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-3', 
+                name: 'Zyad',      
+                scores: [
+                    { date: '2025-12-14', score: 6.5 },
+                    { date: '2025-11-28', score: 7.1 },
+                    { date: '2025-11-27', score: 6.2 },
+                    { date: '2025-11-26', score: 8.5 },
+                    { date: '2025-11-25', score: 7.4 },
+                    { date: '2025-11-24', score: 6.8 },
+                    { date: '2025-11-21', score: 6.8 },
+                    { date: '2025-11-20', score: 7.9 },
+                    { date: '2025-11-19', score: 6.4 },
+                    { date: '2025-11-18', score: 6.0 },
+                    { date: '2025-11-17', score: 7.4 },
+                    { date: '2025-11-14', score: 7.4 },
+                    { date: '2025-11-13', score: 7.4 },
+                    { date: '2025-11-12', score: 5.9 },
+                    { date: '2025-11-11', score: 7.1 },
+                    { date: '2025-11-10', score: 8.0 },
+                    { date: '2025-11-07', score: 6.5 }, 
+                    { date: '2025-11-06', score: 6.1 }, 
+                ],
+                // Accolades
+                accolades: ['9x Content Farmer of the Week', '3x Content Farmer of the Month', 'Year 9 Content Farmer of the Year'],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            // Iaaich data
+            {
+                id: 'id-static-4',
+                name: 'Iaaich',
+                scores: [
+                    { date: '2025-11-28', score: 7.8 },
+                    { date: '2025-11-27', score: 6.4 },
+                    { date: '2025-11-25', score: 8.4 },
+                    { date: '2025-11-24', score: 6.9 },
+                    { date: '2025-11-21', score: 7.3 },
+                    { date: '2025-11-20', score: 6.0 },
+                    { date: '2025-11-13', score: 8.8 },
+                    { date: '2025-11-12', score: 8.3 },
+                    { date: '2025-11-11', score: 7.0 },
+                    { date: '2025-11-10', score: 7.5 },
+                    { date: '2025-11-07', score: 7.8 },
+                    { date: '2025-11-06', score: 9.0 },
+                ],
+                // Accolades
+                accolades: ['12x Content Farmer of the Week', '3x Content Farmer of the Month', 'Year 10 Farmer of the Year'],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            // Milo data (IMPROVED: Sorted scores by date descending)
+            {
+                id: 'id-static-5',
+                name: 'Milo',
+                scores: [
+                    { date: '2025-12-14', score: 5.8 },
+                    { date: '2025-11-27', score: 7.7 },
+                    { date: '2025-11-26', score: 5.7 },
+                    { date: '2025-11-25', score: 6.2 },
+                    { date: '2025-11-24', score: 6.7 },
+                    { date: '2025-11-14', score: 7.5 },
+                    { date: '2025-11-13', score: 6.5 },
+                    { date: '2025-11-12', score: 5.7 },
+                    { date: '2025-11-11', score: 7.0 },
+                    { date: '2025-11-10', score: 6.2 },
+                ],
+                // Accolades
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            // Oualid data
+            {
+                id: 'id-static-6',
+                name: 'Oualid',
+                scores: [
+                    { date: '2025-12-14', score: 7.0 },
+                    { date: '2025-11-28', score: 6.6 },
+                    { date: '2025-11-27', score: 6.1 },
+                    { date: '2025-11-26', score: 8.4 },
+                    { date: '2025-11-25', score: 7.3 },
+                    { date: '2025-11-24', score: 6.6 },
+                    { date: '2025-11-21', score: 5.9 },
+                    { date: '2025-11-20', score: 6.3 },
+                    { date: '2025-11-19', score: 5.3 },
+                    { date: '2025-11-18', score: 5.7 },
+                    { date: '2025-11-14', score: 7.3 },
+                    { date: '2025-11-13', score: 5.5 },
+                    { date: '2025-11-12', score: 6.6 },
+                    { date: '2025-11-11', score: 6.1 },
+                    { date: '2025-11-10', score: 5.9 },
+                    { date: '2025-11-07', score: 7.4 },
+                    { date: '2025-11-06', score: 6.7 },
+                ],
+                // Accolades
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            // Petrol data
+            {
+                id: 'id-static-7',
+                name: 'Petrol',
+                scores: [
+                    { date: '2025-11-27', score: 8.0 },
+                    { date: '2025-11-11', score: 6.5 },
+                    { date: '2025-11-10', score: 7.5 },
+                    { date: '2025-11-07', score: 8.8 },
+                ],
+                accolades: ['2x Content Farmer of the Week'],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },  
+            // Omar data
+            {
+                id: 'id-static-8', 
+                name: 'Omar',      
+                scores: [
+                    { date: '2025-12-14', score: 5.9 },
+                    { date: '2025-11-28', score: 7.8 },
+                    { date: '2025-11-27', score: 8.3 },
+                    { date: '2025-11-26', score: 7.1 },
+                    { date: '2025-11-25', score: 7.6 },
+                    { date: '2025-11-24', score: 8.0 },
+                    { date: '2025-11-21', score: 7.6 },
+                    { date: '2025-11-20', score: 8.8 },
+                    { date: '2025-11-19', score: 7.1 },
+                    { date: '2025-11-18', score: 9.6 },
+                    { date: '2025-11-17', score: 7.4 },
+                    { date: '2025-11-14', score: 8.0 },
+                    { date: '2025-11-13', score: 9.4 },
+                    { date: '2025-11-12', score: 6.7 },
+                    { date: '2025-11-11', score: 8.9 },
+                    { date: '2025-11-10', score: 8.0 },
+                    { date: '2025-11-07', score: 6.2 }, 
+                    { date: '2025-11-06', score: 8.5 }, 
+                ],
+                // Accolades
+                accolades: ['7x Content Farmer of the Week', '1x Content Farmer of the Month'],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            
+            {
+                id: 'id-static-9',
+                name: 'Chayane',
+                scores: [
+                    { date: '2025-11-26', score: 6.8 },
+                    { date: '2025-11-25', score: 7.7 },
+                    { date: '2025-11-24', score: 7.9 },
+                    { date: '2025-11-21', score: 8.1 },
+                    { date: '2025-11-20', score: 8.4 },
+                    { date: '2025-11-19', score: 6.5 },
+                    { date: '2025-11-18', score: 6.3 },
+                    { date: '2025-11-17', score: 8.5 },
+                    { date: '2025-11-14', score: 7.8 },
+                    { date: '2025-11-13', score: 7.3 },
+                    { date: '2025-11-12', score: 5.9 },
+                    { date: '2025-11-11', score: 7.3 },
+                    { date: '2025-11-10', score: 6.3 },
+                    
+                ], // Total 25.8 / 4 = 6.45 (Grade D)
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-10',
+                name: 'Jawad',
+                scores: [
+                    { date: '2025-11-21', score: 6.8 },
+                    { date: '2025-11-17', score: 6.0 },
+                    { date: '2025-11-14', score: 6.4 },
+                ], // Total 19.2 / 3 = 6.40 (Grade D)
+                accolades: ['Online-Only Content Farmer'],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-11',
+                name: 'Lina',
+                scores: [
+                    { date: '2025-12-14', score: 7.3 },
+                    { date: '2025-11-28', score: 6.8 },
+                    { date: '2025-11-27', score: 5.8 },
+                    { date: '2025-11-26', score: 5.8 },
+                    { date: '2025-11-25', score: 5.5 },
+                    { date: '2025-11-24', score: 6.1 },
+                    { date: '2025-11-21', score: 7.7 },
+                    { date: '2025-11-20', score: 6.0 },
+                    { date: '2025-11-19', score: 5.7 },
+                    { date: '2025-11-18', score: 6.7 },
+                    { date: '2025-11-17', score: 5.9 },
+                    { date: '2025-11-14', score: 5.5 },
+                    { date: '2025-11-13', score: 6.9 },
+                    { date: '2025-11-12', score: 5.9 },
+                    { date: '2025-11-11', score: 5.9 },
+                    { date: '2025-11-10', score: 5.5 },
+                ], 
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-12',
+                name: 'Naim',
+                scores: [
+                    { date: '2025-11-27', score: 5.9 },
+                    { date: '2025-11-27', score: 6.1 },
+                    { date: '2025-11-27', score: 5.7 },
+                    { date: '2025-11-26', score: 7.9 },
+                    { date: '2025-11-25', score: 7.7 },
+                    { date: '2025-11-24', score: 6.8 },
+                    { date: '2025-11-21', score: 5.9 },
+                    { date: '2025-11-20', score: 7.5 },
+                    { date: '2025-11-19', score: 6.5 },
+                    { date: '2025-11-18', score: 6.4 },
+                    { date: '2025-11-17', score: 6.9 },
+                    { date: '2025-11-14', score: 6.3 },
+                    { date: '2025-11-13', score: 7.1 },
+                    { date: '2025-11-12', score: 7.9 },
+                    { date: '2025-11-11', score: 9.2 },
+                    { date: '2025-11-10', score: 5.8 },
+                    
+                ], 
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-13',
+                name: 'Bargach',
+                scores: [
+                    { date: '2025-12-14', score: 8.4 },
+                    { date: '2025-11-28', score: 6.7 },
+                    { date: '2025-11-26', score: 7.5 },
+                    { date: '2025-11-25', score: 7.5 },
+                    { date: '2025-11-24', score: 7.1 },
+                    { date: '2025-11-21', score: 6.7 },
+                    { date: '2025-11-20', score: 7.2 },
+                    { date: '2025-11-19', score: 8.4 },
+                    { date: '2025-11-18', score: 7.5 },
+                    { date: '2025-11-17', score: 6.6 },
+                    { date: '2025-11-14', score: 5.4 },
+                    { date: '2025-11-13', score: 6.4 },
+                    { date: '2025-11-12', score: 7.8 },
+                ], 
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-14',
+                name: 'Jybril',
+                scores: [
+                    { date: '2025-12-14', score: 7.2 },
+                    { date: '2025-11-28', score: 8.0 },
+                    { date: '2025-11-27', score: 6.7 },
+                    { date: '2025-11-26', score: 6.7 },
+                    { date: '2025-11-25', score: 8.0 },
+                    { date: '2025-11-24', score: 7.3 },
+                    { date: '2025-11-21', score: 6.3 },
+                    { date: '2025-11-20', score: 7.0 },
+                    { date: '2025-11-19', score: 6.7 },
+                    { date: '2025-11-18', score: 7.0 },
+                    { date: '2025-11-17', score: 8.8 },
+                ], 
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-15',
+                name: 'Rif (group)',
+                scores: [
+                    { date: '2025-12-14', score: 6.4 },
+                    { date: '2025-11-28', score: 7.1 },
+                    { date: '2025-11-27', score: 7.9 },
+                    { date: '2025-11-25', score: 5.5 },
+                    { date: '2025-11-25', score: 6.8 },
+                    { date: '2025-11-24', score: 5.8 },
+                    { date: '2025-11-21', score: 5.7 },
+                    { date: '2025-11-20', score: 6.6 },
+                    { date: '2025-11-19', score: 7.7 },
+                    { date: '2025-11-18', score: 6.8 },
+                    { date: '2025-11-17', score: 6.5 },
+                    { date: '2025-11-14', score: 7.0 },
+                    { date: '2025-11-13', score: 8.8 },
+                    { date: '2025-11-12', score: 6.8 },
+                    { date: '2025-11-11', score: 6.8 },
+                ], 
+                accolades: ['3x Content Farmer Of the Month'],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-16',
+                name: 'Maachow',
+                scores: [
+                    { date: '2025-11-26', score: 7.2 },
+                    { date: '2025-11-25', score: 6.3 },
+                    { date: '2025-11-24', score: 7.6 },
+                    { date: '2025-11-21', score: 6.4 },
+                    { date: '2025-11-20', score: 6.9 },
+                    { date: '2025-11-19', score: 6.6 },
+                    { date: '2025-11-18', score: 7.9 },
+                    { date: '2025-11-17', score: 7.2 },
+                    { date: '2025-11-14', score: 6.1 },
+                    { date: '2025-11-13', score: 6.1 },
+                ], 
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+            {
+                id: 'id-static-17',
+                name: 'Yassir',
+                scores: [
+                    { date: '2025-12-14', score: 8.5 },
+                    { date: '2025-11-28', score: 5.5 },
+                    { date: '2025-11-27', score: 7.5 },
+                    { date: '2025-11-26', score: 7.0 },
+                    { date: '2025-11-25', score: 6.3 },
+                    { date: '2025-11-24', score: 7.0 },
+                    { date: '2025-11-21', score: 6.4 },
+                    { date: '2025-11-20', score: 7.1 },
+                    { date: '2025-11-19', score: 7.6 },
+                    { date: '2025-11-18', score: 8.9 },
+                    { date: '2025-11-17', score: 6.2 },
+                    { date: '2025-11-14', score: 6.5 },
+                    { date: '2025-11-13', score: 7.1 },
+                ], 
+                accolades: [],
+                farmerOfTheDay: false,
+                farmerOfTheMonth: false,
+            },
+        ]; 
 
-    {
-        id: 'id-static-3',
-        name: 'Zyad',
-        scores: [
-            { date: '2025-12-02', score: 7.5 },
-            { date: '2025-12-01', score: 7.3 },
-            { date: '2025-11-26', score: 8.5 },
-            { date: '2025-11-25', score: 7.4 },
-            { date: '2025-11-24', score: 6.8 },
-            { date: '2025-11-21', score: 6.8 },
-            { date: '2025-11-20', score: 7.9 },
-            { date: '2025-11-19', score: 6.4 },
-            { date: '2025-11-18', score: 6.0 },
-            { date: '2025-11-17', score: 7.4 },
-            { date: '2025-11-14', score: 7.4 },
-            { date: '2025-11-13', score: 7.4 },
-            { date: '2025-11-12', score: 5.9 },
-            { date: '2025-11-11', score: 7.1 },
-            { date: '2025-11-10', score: 8.0 },
-            { date: '2025-11-07', score: 6.5 },
-            { date: '2025-11-06', score: 6.1 }
-        ],
-        accolades: [
-            '9x Content Farmer of the Week',
-            '3x Content Farmer of the Month',
-            'Year 9 Content Farmer of the Year'
-        ],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    },
-
-    {
-        id: 'id-static-4',
-        name: 'Iaaich',
-        scores: [
-            { date: '2025-12-01', score: 7.0 },
-            { date: '2025-11-25', score: 8.4 },
-            { date: '2025-11-24', score: 6.9 },
-            { date: '2025-11-21', score: 7.3 },
-            { date: '2025-11-20', score: 6.0 },
-            { date: '2025-11-13', score: 8.8 },
-            { date: '2025-11-12', score: 8.3 },
-            { date: '2025-11-11', score: 7.0 },
-            { date: '2025-11-10', score: 7.5 },
-            { date: '2025-11-07', score: 7.8 },
-            { date: '2025-11-06', score: 9.0 }
-        ],
-        accolades: [
-            '12x Content Farmer of the Week',
-            '3x Content Farmer of the Month',
-            'Year 10 Farmer of the Year'
-        ],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    },
-
-    {
-        id: 'id-static-5',
-        name: 'Milo',
-        scores: [
-            { date: '2025-12-02', score: 5.7 },
-            { date: '2025-12-01', score: 4.0 },
-            { date: '2025-11-26', score: 5.7 },
-            { date: '2025-11-25', score: 6.2 },
-            { date: '2025-11-24', score: 6.7 },
-            { date: '2025-11-14', score: 7.5 },
-            { date: '2025-11-13', score: 6.5 },
-            { date: '2025-11-12', score: 5.9 },
-            { date: '2025-11-11', score: 7.0 },
-            { date: '2025-11-10', score: 6.2 }
-        ],
-        accolades: [],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    },
-
-    {
-        id: 'id-static-6',
-        name: 'Oualid',
-        scores: [
-            { date: '2025-12-02', score: 7.8 },
-            { date: '2025-12-01', score: 7.7 },
-            { date: '2025-11-26', score: 8.4 },
-            { date: '2025-11-25', score: 7.3 },
-            { date: '2025-11-24', score: 6.6 },
-            { date: '2025-11-21', score: 5.9 },
-            { date: '2025-11-20', score: 6.3 },
-            { date: '2025-11-19', score: 5.3 },
-            { date: '2025-11-18', score: 5.7 },
-            { date: '2025-11-14', score: 7.3 },
-            { date: '2025-11-13', score: 5.5 },
-            { date: '2025-11-12', score: 6.6 },
-            { date: '2025-11-11', score: 6.1 },
-            { date: '2025-11-10', score: 5.9 },
-            { date: '2025-11-07', score: 7.4 },
-            { date: '2025-11-06', score: 6.7 }
-        ],
-        accolades: [],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    },
-
-    {
-        id: 'id-static-7',
-        name: 'Petrol',
-        scores: [
-            { date: '2025-11-11', score: 6.5 },
-            { date: '2025-11-10', score: 7.5 },
-            { date: '2025-11-07', score: 8.8 }
-        ],
-        accolades: ['2x Content Farmer of the Week'],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    },
-
-    {
-        id: 'id-static-8',
-        name: 'Omar',
-        scores: [
-            { date: '2025-12-02', score: 6.8 },
-            { date: '2025-12-01', score: 6.5 },
-            { date: '2025-11-26', score: 7.1 },
-            { date: '2025-11-25', score: 7.6 },
-            { date: '2025-11-24', score: 8.0 },
-            { date: '2025-11-21', score: 7.6 },
-            { date: '2025-11-20', score: 8.8 },
-            { date: '2025-11-19', score: 7.1 },
-            { date: '2025-11-18', score: 9.6 },
-            { date: '2025-11-17', score: 7.4 },
-            { date: '2025-11-14', score: 8.0 },
-            { date: '2025-11-13', score: 9.4 },
-            { date: '2025-11-12', score: 6.7 },
-            { date: '2025-11-11', score: 8.9 },
-            { date: '2025-11-10', score: 8.0 },
-            { date: '2025-11-07', score: 6.2 },
-            { date: '2025-11-06', score: 8.5 }
-        ],
-        accolades: [
-            '7x Content Farmer of the Week',
-            '1x Content Farmer of the Month'
-        ],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    },
-
-    {
-        id: 'id-static-9',
-        name: 'Chayane',
-        scores: [
-            { date: '2025-11-26', score: 6.8 },
-            { date: '2025-11-25', score: 7.7 },
-            { date: '2025-11-24', score: 7.9 },
-            { date: '2025-11-21', score: 8.1 },
-            { date: '2025-11-20', score: 8.4 },
-            { date: '2025-11-19', score: 6.5 },
-            { date: '2025-11-18', score: 6.3 },
-            { date: '2025-11-17', score: 8.5 },
-            { date: '2025-11-14', score: 7.8 },
-            { date: '2025-11-13', score: 7.3 },
-            { date: '2025-11-12', score: 5.9 },
-            { date: '2025-11-11', score: 7.3 },
-            { date: '2025-11-10', score: 6.3 }
-        ],
-        accolades: [],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    },
-
-        {
-        id: 'id-static-10',
-        name: 'Jawad',
-        scores: [
-            { date: '2025-11-21', score: 6.8 },
-            { date: '2025-11-17', score: 6.0 },
-            { date: '2025-11-14', score: 6.4 }
-        ],
-        accolades: [
-            'Online-Only Content Farmer'
-        ],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    },
-
-    {
-        id: 'id-static-11',
-        name: 'Lina',
-        scores: [
-            { date: '2025-12-02', score: 7.9 },
-            { date: '2025-12-01', score: 6.1 },
-            { date: '2025-11-26', score: 5.8 },
-            { date: '2025-11-25', score: 5.5 },
-            { date: '2025-11-24', score: 6.1 },
-            { date: '2025-11-21', score: 7.7 },
-            { date: '2025-11-20', score: 6.0 },
-            { date: '2025-11-19', score: 5.7 },
-            { date: '2025-11-18', score: 6.7 },
-            { date: '2025-11-17', score: 5.9 },
-            { date: '2025-11-14', score: 5.5 },
-            { date: '2025-11-13', score: 6.9 },
-            { date: '2025-11-12', score: 5.9 },
-            { date: '2025-11-11', score: 5.9 },
-            { date: '2025-11-10', score: 5.5 }
-        ],
-        accolades: [],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    },
-
-    {
-        id: 'id-static-12',
-        name: 'Naim',
-        scores: [
-            { date: '2025-12-02', score: 7.5 },
-            { date: '2025-12-01', score: 7.3 },
-            { date: '2025-11-26', score: 7.9 },
-            { date: '2025-11-25', score: 7.7 },
-            { date: '2025-11-24', score: 6.8 },
-            { date: '2025-11-21', score: 5.9 },
-            { date: '2025-11-20', score: 7.5 },
-            { date: '2025-11-19', score: 6.5 },
-            { date: '2025-11-18', score: 6.4 },
-            { date: '2025-11-17', score: 6.9 },
-            { date: '2025-11-14', score: 6.3 },
-            { date: '2025-11-13', score: 7.1 },
-            { date: '2025-11-12', score: 7.9 },
-            { date: '2025-11-11', score: 9.2 },
-            { date: '2025-11-10', score: 5.8 }
-        ],
-        accolades: [],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    },
-
-    {
-        id: 'id-static-13',
-        name: 'Bargach',
-        scores: [
-            { date: '2025-12-02', score: 7.6 },
-            { date: '2025-12-01', score: 6.7 },
-            { date: '2025-11-26', score: 7.5 },
-            { date: '2025-11-25', score: 7.5 },
-            { date: '2025-11-24', score: 7.1 },
-            { date: '2025-11-21', score: 6.7 },
-            { date: '2025-11-20', score: 7.2 },
-            { date: '2025-11-19', score: 8.4 },
-            { date: '2025-11-18', score: 7.5 },
-            { date: '2025-11-17', score: 6.6 },
-            { date: '2025-11-14', score: 5.4 },
-            { date: '2025-11-13', score: 6.4 },
-            { date: '2025-11-12', score: 7.8 }
-        ],
-        accolades: [],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    },
-
-    {
-        id: 'id-static-14',
-        name: 'Jybril',
-        scores: [
-            { date: '2025-12-02', score: 6.8 },
-            { date: '2025-12-01', score: 7.1 },
-            { date: '2025-11-26', score: 6.7 },
-            { date: '2025-11-25', score: 8.0 },
-            { date: '2025-11-24', score: 7.6 },
-            { date: '2025-11-21', score: 6.3 },
-            { date: '2025-11-20', score: 7.0 },
-            { date: '2025-11-19', score: 6.7 },
-            { date: '2025-11-18', score: 7.0 },
-            { date: '2025-11-17', score: 8.8 }
-        ],
-        accolades: [],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    },
-
-    {
-        id: 'id-static-15',
-        name: 'Rif (group)',
-        scores: [
-            { date: '2025-12-02', score: 7.5 },
-            { date: '2025-12-01', score: 6.1 },
-            { date: '2025-11-25', score: 5.5 },
-            { date: '2025-11-25', score: 6.8 },
-            { date: '2025-11-24', score: 5.8 },
-            { date: '2025-11-21', score: 5.7 },
-            { date: '2025-11-20', score: 6.6 },
-            { date: '2025-11-19', score: 7.7 },
-            { date: '2025-11-18', score: 6.8 },
-            { date: '2025-11-17', score: 6.5 },
-            { date: '2025-11-14', score: 7.0 },
-            { date: '2025-11-13', score: 8.8 },
-            { date: '2025-11-12', score: 6.8 },
-            { date: '2025-11-11', score: 6.8 }
-        ],
-        accolades: [
-            '3x Content Farmer Of the Month'
-        ],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    },
-
-    {
-        id: 'id-static-16',
-        name: 'Maachow',
-        scores: [
-            { date: '2025-12-02', score: 6.0 },
-            { date: '2025-12-01', score: 6.6 },
-            { date: '2025-11-26', score: 7.2 },
-            { date: '2025-11-25', score: 6.3 },
-            { date: '2025-11-24', score: 7.6 },
-            { date: '2025-11-21', score: 6.4 },
-            { date: '2025-11-20', score: 6.9 },
-            { date: '2025-11-19', score: 6.6 },
-            { date: '2025-11-18', score: 7.9 },
-            { date: '2025-11-17', score: 7.2 },
-            { date: '2025-11-14', score: 6.1 },
-            { date: '2025-11-13', score: 6.1 }
-        ],
-        accolades: [],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    },
-
-    {
-        id: 'id-static-17',
-        name: 'Yassir',
-        scores: [
-            { date: '2025-12-02', score: 6.8 }
-            { date: '2025-12-01', score: 7.7 },
-            { date: '2025-11-26', score: 7.0 },
-            { date: '2025-11-25', score: 6.3 },
-            { date: '2025-11-24', score: 7.0 },
-            { date: '2025-11-21', score: 6.4 },
-            { date: '2025-11-20', score: 7.1 },
-            { date: '2025-11-19', score: 7.6 },
-            { date: '2025-11-18', score: 8.9 },
-            { date: '2025-11-17', score: 6.2 },
-            { date: '2025-11-14', score: 6.5 },
-            { date: '2025-11-13', score: 7.1 }
-        ],
-        accolades: [],
-        farmerOfTheDay: false,
-        farmerOfTheMonth: false
-    }
-];
-
-];
-
-        ];
-
-        // STATE
         let allFarmers = [];
         let currentView = 'leaderboard';
         let selectedFarmerId = null;
         let searchTerm = '';
-        let currentSort = 'rank';
 
-        // GRADE HELPERS
-        function calculateGrade(avg) {
-            if (avg >= 8.0) return 'A+';
-            if (avg >= 7.5) return 'A';
-            if (avg >= 7.0) return 'B';
-            if (avg >= 6.5) return 'C';
-            if (avg >= 6.0) return 'D';
+        // --- GRADE FUNCTIONS (The Performance Grade Upgrade) ---
+
+        function calculateGrade(average) {
+            // Grading Scale: A+ = 8.0+, A = 7.5-7.9, B = 7.0-7.4, C = 6.5-6.9, D = 6.0-6.4, E = < 6.0
+            if (average >= 8.0) return 'A+';
+            if (average >= 7.5) return 'A';
+            if (average >= 7.0) return 'B';
+            if (average >= 6.5) return 'C';
+            if (average >= 6.0) return 'D';
             return 'E';
         }
-        function getGradeDisplayClass(g) {
-            switch(g) {
+
+        function getGradeDisplayClass(grade) {
+            switch (grade) {
                 case 'A+': return 'text-purple-400';
                 case 'A': return 'text-indigo-400';
                 case 'B': return 'text-blue-400';
@@ -456,149 +528,163 @@
             }
         }
 
-        // COLORS
-        function getScoreColorClass(score) {
-            if (score >= 9.0) return 'score-purple';
-            if (score >= 8.0) return 'score-lightblue';
-            if (score >= 7.0) return 'score-green';
-            if (score >= 6.5) return 'score-yellow';
-            if (score >= 6.0) return 'score-orange';
-            return 'score-red';
-        }
+        // --- HELPER FUNCTIONS ---
 
-        // Consecutive >= threshold
-        function countConsecutiveHighScores(farmer, threshold=7.0) {
-            const sorted = farmer.scores.slice().sort((a,b)=>b.date.localeCompare(a.date));
-            let c = 0;
-            for (let i=0;i<sorted.length;i++){ if (sorted[i].score>=threshold) c++; else break; }
-            return c;
-        }
-
-        function getLatestTrend(farmer) {
-            const s = farmer.scores.slice().sort((a,b)=>b.date.localeCompare(a.date));
-            if (!s[0] || !s[1]) return 'none';
-            if (s[0].score > s[1].score) return 'up';
-            if (s[0].score < s[1].score) return 'down';
-            return 'equal';
-        }
-
-        // Compute averages using last AVERAGE_LOOKBACK scores
-        function computeFarmerAverages(data) {
-            return data.map(f => {
-                const sorted = f.scores.slice().sort((a,b)=>b.date.localeCompare(a.date));
-                const relevant = sorted.slice(0, AVERAGE_LOOKBACK);
-                const total = relevant.reduce((sum,x)=>sum + x.score, 0);
-                const avg = relevant.length>0 ? total / relevant.length : 0;
-                return { ...f, scores:sorted, latestScores: sorted.slice(0,5), currentAverage: parseFloat(avg.toFixed(2)), overallGrade: calculateGrade(parseFloat(avg.toFixed(2))) };
-            });
-        }
-
-        function sortForDefaultRank(farmers) {
-            const order = {'A+':6,'A':5,'B':4,'C':3,'D':2,'E':1,'N/A':0};
-            const arr = farmers.slice().sort((a,b)=>{
-                const ga = order[a.overallGrade]||0;
-                const gb = order[b.overallGrade]||0;
-                if (gb !== ga) return gb - ga;
-                return b.currentAverage - a.currentAverage;
-            });
-            return arr.map((f,i)=> ({...f, rank: i+1}) );
-        }
-
-        // Initialize
         function initializeData() {
-            allFarmers = computeFarmerAverages(STATIC_FARMERS_DATA);
-            allFarmers = sortForDefaultRank(allFarmers);
+            allFarmers = STATIC_FARMERS_DATA.map(farmer => {
+                
+                // Ensure the primary scores list is always sorted newest to oldest.
+                const sortedScores = farmer.scores
+                    .sort((a, b) => b.date.localeCompare(a.date)); // descending date order
+
+                // Use all scores up to the latest 15 for the overall average/grade
+                const relevantScores = sortedScores.slice(0, 15); 
+
+                const totalScore = relevantScores.reduce((sum, s) => sum + s.score, 0);
+                const average = relevantScores.length > 0 ? totalScore / relevantScores.length : 0;
+                const overallAverage = parseFloat(average.toFixed(2));
+                
+                // CALCULATE THE GRADE
+                const overallGrade = calculateGrade(overallAverage);
+
+                // Use the already sorted list for the latest 5 scores
+                const latestScoresForDisplay = sortedScores.slice(0, 5); 
+
+                return {
+                    ...farmer,
+                    scores: sortedScores, // Use the new, consistently sorted scores array
+                    latestScores: latestScoresForDisplay,
+                    currentAverage: overallAverage,
+                    overallGrade: overallGrade,
+                };
+            });
+
+            // Calculate ranks: Sort first by Grade (using gradeOrder value), then by Average for ties
+            const gradeOrder = { 'A+': 6, 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1, 'N/A': 0 };
+
+            allFarmers.sort((a, b) => {
+                const gradeA = gradeOrder[a.overallGrade] || 0;
+                const gradeB = gradeOrder[b.overallGrade] || 0;
+                
+                if (gradeB !== gradeA) {
+                    return gradeB - gradeA; // Sort by grade descending
+                }
+                return b.currentAverage - a.currentAverage; // Sort by average descending for ties
+            });
+
+            allFarmers = allFarmers.map((farmer, index) => {
+                return {
+                    ...farmer,
+                    rank: index + 1,
+                };
+            });
+
             updateView();
         }
 
+        function getScoreColorClass(score) {
+            // 9.0-10.0 = purple
+            if (score >= 9.0) return 'score-purple';
+            // 8.0-8.9 = light blue
+            if (score >= 8.0) return 'score-lightblue';
+            // 7.0-7.9 = green
+            if (score >= 7.0) return 'score-green';
+            // 6.5-6.9 = yellow
+            if (score >= 6.5) return 'score-yellow';
+            // 6.0-6.4 = orange
+            if (score >= 6.0) return 'score-orange';
+            // 5.9- = red (everything below 6.0)
+            return 'score-red';
+        }
+        
+        // --- VIEW CONTROLLERS ---
+
         function updateView() {
-            if (currentView === 'leaderboard') renderLeaderboard();
-            else if (currentView === 'profile' && selectedFarmerId) renderProfile(selectedFarmerId);
-        }
-
-        function showLeaderboard(){ currentView='leaderboard'; selectedFarmerId=null; updateView(); }
-        function showProfile(id){ currentView='profile'; selectedFarmerId=id; updateView(); }
-        function handleSearch(v){ searchTerm = v.trim(); renderLeaderboard(); }
-
-        // Sorting
-        function sortFarmers(farmers, criteria) {
-            const arr = farmers.slice();
-            if (criteria === 'rank') return arr.sort((a,b)=>a.rank - b.rank);
-            if (criteria === 'alphabetical') return arr.sort((a,b)=>a.name.localeCompare(b.name));
-            if (criteria === 'average') return arr.sort((a,b)=>b.currentAverage - a.currentAverage);
-            if (criteria === 'grade') {
-                const order = {'A+':6,'A':5,'B':4,'C':3,'D':2,'E':1,'N/A':0};
-                return arr.sort((a,b)=> {
-                    const ga = order[a.overallGrade]||0;
-                    const gb = order[b.overallGrade]||0;
-                    if (gb !== ga) return gb - ga;
-                    return b.currentAverage - a.currentAverage;
-                });
+            if (currentView === 'leaderboard') {
+                renderLeaderboard();
+            } else if (currentView === 'profile' && selectedFarmerId) {
+                renderProfile(selectedFarmerId);
             }
-            if (criteria === 'latest') return arr.sort((a,b)=> (b.latestScores[0]?.score||0) - (a.latestScores[0]?.score||0) );
-            return arr;
         }
 
-        function onSortChange(el){ currentSort = el.value; renderLeaderboard(); }
+        function showLeaderboard() {
+            currentView = 'leaderboard';
+            selectedFarmerId = null;
+            updateView();
+        }
 
-        // RENDER LEADERBOARD
+        function showProfile(id) {
+            currentView = 'profile';
+            selectedFarmerId = id;
+            updateView();
+        }
+
+        function handleSearch(value) {
+            searchTerm = value.trim();
+            renderLeaderboard();
+        }
+
+        // --- RENDERING FUNCTIONS ---
+
         function renderLeaderboard() {
             const container = document.getElementById('app-container');
-            const filtered = allFarmers.filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase()));
-            const sorted = sortFarmers(filtered, currentSort);
+            const filteredFarmers = allFarmers
+                .filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                .sort((a, b) => a.rank - b.rank); // Ensure sorted by rank
 
-            const farmerListHtml = sorted.map((farmer, idx) => {
-                const displayRank = currentSort === 'rank' ? farmer.rank : (idx + 1);
-                const latestScore = farmer.latestScores[0]?.score ?? 0;
-                const latestScoreDisplay = (latestScore).toFixed(1);
-                const trend = getLatestTrend(farmer);
-                const trendIcon = trend === 'up' ? '<span title="Improved since last" class="text-green-300">▲</span>' : (trend === 'down' ? '<span title="Worse than last" class="text-red-300">▼</span>' : (trend==='equal' ? '<span title="Same as last" class="text-gray-300">→</span>' : ''));
-                const fireHtml = countConsecutiveHighScores(farmer,7.0) >= 3 ? ' <span title="On a hot streak" class="text-yellow-400">🔥</span>' : '';
-
-                return `
-                    <div class="leaderboard-grid grid grid-cols-4 sm:grid-cols-5 items-center p-4 rounded-xl shadow-lg mb-2 cursor-pointer transition duration-200 ease-in-out transform hover:scale-[1.01] ${(displayRank % 2 === 0) ? 'bg-gray-800' : 'bg-gray-700/50'}" onclick="showProfile('${farmer.id}')">
-                        <div class="font-bold text-2xl text-indigo-400">#${displayRank}</div>
-                        <div class="col-span-2 sm:col-span-1 flex flex-col">
-                            <span class="font-semibold text-lg">${farmer.name}${fireHtml}</span>
-                            <div class="text-xs mt-1 space-x-1">
-                                ${farmer.farmerOfTheDay ? '<span class="px-2 py-0.5 bg-yellow-600 rounded-full text-xs font-medium text-gray-900">FOTD</span>' : ''}
-                                ${farmer.farmerOfTheMonth ? '<span class="px-2 py-0.5 bg-indigo-600 rounded-full text-xs font-medium text-white">FOTM</span>' : ''}
-                                ${farmer.accolades.length>0 ? '<span class="px-2 py-0.5 bg-green-600 rounded-full text-xs font-medium text-white">Awarded</span>' : ''}
-                            </div>
-                        </div>
-                        <div class="flex flex-col items-center">
-                            <span class="text-sm text-gray-400">Overall Avg</span>
-                            <div class="${getScoreColorClass(farmer.currentAverage)} score-value-box mt-1">${farmer.currentAverage.toFixed(2)}</div>
-                        </div>
-                        <div class="flex flex-col items-center hidden sm:flex">
-                            <span class="text-sm text-gray-400">Performance Grade</span>
-                            <span class="text-lg font-bold mt-1 ${getGradeDisplayClass(farmer.overallGrade)}">${farmer.overallGrade}</span>
-                        </div>
-                        <div class="flex flex-col items-center">
-                            <span class="text-sm text-gray-400">Latest</span>
-                            <div class="${getScoreColorClass(latestScore)} score-value-box mt-1">${latestScoreDisplay} ${trendIcon}</div>
+            const farmerListHtml = filteredFarmers.map(farmer => `
+                <div 
+                    class="leaderboard-grid grid grid-cols-4 sm:grid-cols-5 items-center p-4 rounded-xl shadow-lg mb-2 cursor-pointer transition duration-200 ease-in-out transform hover:scale-[1.01] ${farmer.rank % 2 === 0 ? 'bg-gray-800' : 'bg-gray-700/50'}"
+                    onclick="showProfile('${farmer.id}')"
+                >
+                    <div class="font-bold text-2xl text-indigo-400">#${farmer.rank}</div>
+                    
+                    <div class="col-span-2 sm:col-span-1 flex flex-col">
+                        <span class="font-semibold text-lg">${farmer.name}</span>
+                        <div class="text-xs mt-1 space-x-1">
+                            ${farmer.farmerOfTheDay ? '<span class="px-2 py-0.5 bg-yellow-600 rounded-full text-xs font-medium text-gray-900">FOTD</span>' : ''}
+                            ${farmer.farmerOfTheMonth ? '<span class="px-2 py-0.5 bg-indigo-600 rounded-full text-xs font-medium text-white">FOTM</span>' : ''}
+                            ${farmer.accolades.length > 0 ? '<span class="px-2 py-0.5 bg-green-600 rounded-full text-xs font-medium text-white">Awarded</span>' : ''}
                         </div>
                     </div>
-                `;
-            }).join('');
+                    
+                    <div class="flex flex-col items-center">
+                        <span class="text-sm text-gray-400">Overall Avg</span>
+                        <div class="${getScoreColorClass(farmer.currentAverage)} score-value-box mt-1">
+                            ${farmer.currentAverage.toFixed(2)}
+                        </div>
+                    </div>
 
-            container.innerHTML = `
-                <h1 class="text-4xl font-extrabold mb-6 text-white text-center">ContentRate Leaderboard</h1>
-                <div class="mb-6 flex flex-col md:flex-row md:items-center md:space-x-3 space-y-3 md:space-y-0">
-                    <input type="text" placeholder="Search farmers by name..." class="w-full p-3 rounded-xl bg-gray-800 border border-gray-700 text-white focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" oninput="handleSearch(this.value)" value="${searchTerm}">
-                    <div class="flex items-center space-x-2">
-                        <label class="text-sm text-gray-400 mr-2">Sort by</label>
-                        <select onchange="onSortChange(this)" class="p-3 rounded-xl bg-gray-800 border border-gray-700 text-white">
-                            <option value="rank" ${currentSort === 'rank' ? 'selected' : ''}>Default Rank</option>
-                            <option value="alphabetical" ${currentSort === 'alphabetical' ? 'selected' : ''}>Alphabetical (A–Z)</option>
-                            <option value="average" ${currentSort === 'average' ? 'selected' : ''}>Highest Average</option>
-                            <option value="grade" ${currentSort === 'grade' ? 'selected' : ''}>Performance Grade</option>
-                            <option value="latest" ${currentSort === 'latest' ? 'selected' : ''}>Latest Score</option>
-                        </select>
-                        <button onclick="initializeData()" class="px-4 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition duration-150" title="Refresh"><i class="fas fa-redo"></i></button>
-                        <button onclick="openTutorial()" class="px-4 py-3 bg-gray-700 border border-gray-600 text-white rounded-xl hover:bg-gray-600 transition duration-150" title="Open tutorial"><i class="fas fa-question-circle mr-2"></i> Tutorial</button>
+                    <div class="flex flex-col items-center hidden sm:flex">
+                        <span class="text-sm text-gray-400">Performance Grade</span>
+                        <span class="text-lg font-bold mt-1 ${getGradeDisplayClass(farmer.overallGrade)}">${farmer.overallGrade}</span>
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <span class="text-sm text-gray-400">Latest</span>
+                        <div class="${getScoreColorClass(farmer.latestScores[0]?.score || 0)} score-value-box mt-1">
+                            ${(farmer.latestScores[0]?.score || 0).toFixed(1)}
+                        </div>
                     </div>
                 </div>
+            `).join('');
+
+            container.innerHTML = `
+                <h1 class="text-4xl font-extrabold mb-8 text-white text-center">ContentRate Leaderboard</h1>
+                
+                <div class="mb-6 flex space-x-3">
+                    <input 
+                        type="text" 
+                        placeholder="Search farmers by name..." 
+                        class="w-full p-3 rounded-xl bg-gray-800 border border-gray-700 text-white focus:ring-indigo-500 focus:border-indigo-500 transition duration-150"
+                        oninput="handleSearch(this.value)"
+                        value="${searchTerm}"
+                    >
+                    <button onclick="updateView()" class="px-4 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition duration-150">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                </div>
+
                 <div class="leaderboard-header grid grid-cols-4 sm:grid-cols-5 text-sm font-semibold text-gray-400 p-3 mb-2 rounded-lg bg-gray-800">
                     <div class="text-indigo-400">Rank</div>
                     <div class="col-span-2 sm:col-span-1">Farmer Name</div>
@@ -606,134 +692,150 @@
                     <div class="text-center hidden sm:block">Performance Grade</div>
                     <div class="text-center">Latest Score</div>
                 </div>
-                <div id="leaderboard-list">${farmerListHtml}</div>
-                <div class="text-center text-xs text-gray-400 mt-6">Last updated: ${LAST_UPDATED} • Version ${APP_VERSION} • <a href="${DISCORD_LINK}" class="underline text-indigo-300" target="_blank" rel="noopener noreferrer">Discord</a></div>
+
+                <div id="leaderboard-list">
+                    ${farmerListHtml}
+                </div>
             `;
         }
 
-        // RENDER PROFILE with placement for each score
         function renderProfile(farmerId) {
             const container = document.getElementById('app-container');
             const farmer = allFarmers.find(f => f.id === farmerId);
-            if (!farmer) { container.innerHTML = '<p class="text-center text-red-400 mt-10">Farmer not found.</p>'; return; }
+            
+            if (!farmer) {
+                container.innerHTML = '<p class="text-center text-red-400 mt-10">Farmer not found.</p>';
+                return;
+            }
 
-            const chartScores = farmer.scores.slice(0,5).sort((a,b)=>a.date.localeCompare(b.date));
+            // The scores array in the farmer object is now pre-sorted (newest to oldest).
+            
+            // 1. Chart scores (Last 5 scores, oldest on left for chart)
+            const chartScores = farmer.scores
+                .slice(0, 5) // Take the 5 newest scores
+                .sort((a, b) => a.date.localeCompare(b.date)); // Sort them ascending for chart display
+            
+            const numScores = chartScores.length;
+            
+            // --- Bar Chart Generation ---
             const overallRange = SCORE_RANGE_MAX - SCORE_RANGE_MIN;
+            
+            // FIXED: Calculate average line position relative to the chart range (3.0 to 10.0)
             const normalizedAvg = (farmer.currentAverage - SCORE_RANGE_MIN) / overallRange;
-            const avgLineHeight = Math.max(0, normalizedAvg * 100);
+            const avgLineHeight = Math.max(0, normalizedAvg * 100); // Ensure non-negative height
 
             const barsHtml = chartScores.map(s => {
-                const clamped = Math.max(s.score, SCORE_RANGE_MIN);
-                const normalized = (clamped - SCORE_RANGE_MIN) / overallRange;
-                const barHeight = Math.max(1, normalized * 100);
-                const dateShort = s.date.substring(5);
-                return `<div class="bar-wrapper group"><div class="bar ${getScoreColorClass(s.score)}" style="height:${barHeight}%;" title="Score: ${s.score.toFixed(1)} on ${s.date}"><span class="bar-label opacity-0 group-hover:opacity-100 transition-opacity">${s.score.toFixed(1)}</span></div><span class="bar-date">${dateShort}</span></div>`;
-            }).join('');
+                // FIX: Clamp score to SCORE_RANGE_MIN to prevent negative bar heights (visual bug)
+                const clampedScore = Math.max(s.score, SCORE_RANGE_MIN);
+                const normalizedScore = (clampedScore - SCORE_RANGE_MIN) / overallRange;
 
-            const accoladesHtml = farmer.accolades.map(acc=>`<li class="flex items-center text-sm text-gray-400"><i class="fas fa-award text-yellow-500 mr-2"></i> ${acc}</li>`).join('');
+                // Bar height is calculated as a percentage of the chart container height
+                const barHeight = Math.max(1, normalizedScore * 100); // Set minimum height for visibility
+                
+                // Format the date to be shorter for mobile view
+                const dateShort = s.date.substring(5); // e.g., '11-14'
 
-            // --- Score history with placement compared to all farmers for the same date ---
-            const scoreHistoryHtml = farmer.scores.map(s => {
-                // gather all scores from all farmers on same date
-                const sameDayScores = allFarmers.flatMap(f => f.scores).filter(x => x.date === s.date).map(x => x.score).sort((a,b)=>b-a);
-                const placement = sameDayScores.indexOf(s.score) + 1;
-                function ordinal(n) {
-                    if (n === 1) return "1st";
-                    if (n === 2) return "2nd";
-                    if (n === 3) return "3rd";
-                    return `${n}th`;
-                }
                 return `
-                    <li class="flex justify-between items-center py-2 border-b border-gray-700 last:border-b-0">
-                        <span class="text-sm text-gray-400">${s.date}</span>
-                        <div class="flex items-center space-x-2">
-                            <div class="${getScoreColorClass(s.score)} score-value-box">${s.score.toFixed(1)}</div>
-                            <span class="text-gray-400 text-sm">${ordinal(placement)}</span>
+                    <div class="bar-wrapper group">
+                        <div 
+                            class="bar ${getScoreColorClass(s.score)}" 
+                            style="height: ${barHeight}%;"
+                            title="Score: ${s.score.toFixed(1)} on ${s.date}"
+                        >
+                            <span class="bar-label opacity-0 group-hover:opacity-100 transition-opacity">${s.score.toFixed(1)}</span>
                         </div>
-                    </li>
+                        <span class="bar-date">${dateShort}</span>
+                    </div>
                 `;
             }).join('');
 
-            const fireHtml = countConsecutiveHighScores(farmer,7.0) >= 3 ? '<span class="ml-2 text-yellow-400">🔥</span>' : '';
+            const accoladesHtml = farmer.accolades.map(acc => `
+                <li class="flex items-center text-sm text-gray-400">
+                    <i class="fas fa-award text-yellow-500 mr-2"></i> ${acc}
+                </li>
+            `).join('');
+
+            // 2. History List (using the pre-sorted farmer.scores array - newest to oldest)
+            const scoreHistoryHtml = farmer.scores
+                .map(s => `
+                    <li class="flex justify-between items-center py-2 border-b border-gray-700 last:border-b-0">
+                        <span class="text-sm text-gray-400">${s.date}</span>
+                        <div class="${getScoreColorClass(s.score)} score-value-box">
+                            ${s.score.toFixed(1)}
+                        </div>
+                    </li>
+                `).join('');
 
             container.innerHTML = `
                 <div class="flex justify-between items-center mb-6">
-                    <button onclick="showLeaderboard()" class="flex items-center text-indigo-400 hover:text-indigo-300 transition duration-150"><i class="fas fa-arrow-left mr-2"></i> Back to Leaderboard</button>
-                    <h1 class="text-3xl font-extrabold text-white">${farmer.name}'s Profile ${fireHtml}</h1>
+                    <button onclick="showLeaderboard()" class="flex items-center text-indigo-400 hover:text-indigo-300 transition duration-150">
+                        <i class="fas fa-arrow-left mr-2"></i> Back to Leaderboard
+                    </button>
+                    <h1 class="text-3xl font-extrabold text-white">${farmer.name}'s Profile</h1>
                 </div>
 
                 <div class="bg-gray-800 p-6 rounded-xl shadow-2xl">
+                    
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-center">
-                        <div class="p-4 bg-gray-700 rounded-lg"><span class="block text-lg font-medium text-gray-400">Current Rank</span><span class="block text-4xl font-bold text-indigo-400">#${farmer.rank}</span></div>
-                        <div class="p-4 bg-gray-700 rounded-lg"><span class="block text-lg font-medium text-gray-400">Overall Average</span><span class="block text-4xl font-bold ${getGradeDisplayClass(farmer.overallGrade)} text-white mt-1">${farmer.currentAverage.toFixed(2)}</span></div>
-                        <div class="p-4 bg-gray-700 rounded-lg"><span class="block text-lg font-medium text-gray-400">Performance Grade</span><span class="block text-4xl font-bold ${getGradeDisplayClass(farmer.overallGrade)}">${farmer.overallGrade}</span></div>
+                        <div class="p-4 bg-gray-700 rounded-lg">
+                            <span class="block text-lg font-medium text-gray-400">Current Rank</span>
+                            <span class="block text-4xl font-bold text-indigo-400">#${farmer.rank}</span>
+                        </div>
+                        <div class="p-4 bg-gray-700 rounded-lg">
+                            <span class="block text-lg font-medium text-gray-400">Overall Average</span>
+                            <span class="block text-4xl font-bold ${getGradeDisplayClass(farmer.overallGrade)} text-white mt-1">${farmer.currentAverage.toFixed(2)}</span>
+                        </div>
+                        <div class="p-4 bg-gray-700 rounded-lg">
+                            <span class="block text-lg font-medium text-gray-400">Performance Grade</span>
+                            <span class="block text-4xl font-bold ${getGradeDisplayClass(farmer.overallGrade)}">${farmer.overallGrade}</span>
+                        </div>
                     </div>
 
                     ${farmer.accolades.length > 0 || farmer.farmerOfTheDay || farmer.farmerOfTheMonth ? `
-                        <div class="mb-8 p-4 bg-gray-700 rounded-lg border border-yellow-500/50">
-                            <h2 class="text-xl font-semibold mb-3 text-yellow-400 flex items-center"><i class="fas fa-trophy mr-2"></i> Achievements</h2>
-                            <ul class="space-y-2">${farmer.farmerOfTheDay ? '<li class="flex items-center text-sm font-medium text-yellow-300"><i class="fas fa-star mr-2"></i> Farmer of the Day</li>' : ''}${farmer.farmerOfTheMonth ? '<li class="flex items-center text-sm font-medium text-indigo-300"><i class="fas fa-calendar-alt mr-2"></i> Farmer of the Month</li>' : ''}${accoladesHtml}</ul>
-                        </div>
+                    <div class="mb-8 p-4 bg-gray-700 rounded-lg border border-yellow-500/50">
+                        <h2 class="text-xl font-semibold mb-3 text-yellow-400 flex items-center"><i class="fas fa-trophy mr-2"></i> Achievements</h2>
+                        <ul class="space-y-2">
+                            ${farmer.farmerOfTheDay ? '<li class="flex items-center text-sm font-medium text-yellow-300"><i class="fas fa-star mr-2"></i> Farmer of the Day</li>' : ''}
+                            ${farmer.farmerOfTheMonth ? '<li class="flex items-center text-sm font-medium text-indigo-300"><i class="fas fa-calendar-alt mr-2"></i> Farmer of the Month</li>' : ''}
+                            ${accoladesHtml}
+                        </ul>
+                    </div>
                     ` : ''}
 
                     <div class="mb-8">
-                        <h2 class="text-xl font-semibold mb-4 text-white">Latest ${chartScores.length} Scores Bar Chart</h2>
+                        <h2 class="text-xl font-semibold mb-4 text-white">Latest ${numScores} Scores Bar Chart</h2>
                         <div class="bg-gray-700 rounded-lg p-3">
                             <div class="bar-chart-container relative">
-                                <div class="avg-bar-line" style="bottom: ${avgLineHeight}%;"><span class="avg-bar-label">${farmer.currentAverage.toFixed(2)} Avg</span></div>
+                                <div class="avg-bar-line" style="bottom: ${avgLineHeight}%;">
+                                    <span class="avg-bar-label">${farmer.currentAverage.toFixed(2)} Avg</span>
+                                </div>
+
                                 ${barsHtml}
                             </div>
-                            <div class="flex justify-between text-xs text-gray-400 mt-2"><span>3.0 (Min)</span><span>10.0 (Max)</span></div>
+
+                            <div class="flex justify-between text-xs text-gray-400 mt-2">
+                                <span>3.0 (Min)</span>
+                                <span>10.0 (Max)</span>
+                            </div>
                         </div>
                     </div>
 
                     <div>
                         <h2 class="text-xl font-semibold mb-3 text-white">Detailed Score History (${farmer.scores.length} total)</h2>
-                        <ul class="divide-y divide-gray-700 border border-gray-700 rounded-xl p-4 bg-gray-700">${scoreHistoryHtml}</ul>
-                    </div>
-                </div>
-
-                <div class="text-center text-xs text-gray-400 mt-6">Last updated: ${LAST_UPDATED} • Version ${APP_VERSION} • <a href="${DISCORD_LINK}" class="underline text-indigo-300" target="_blank" rel="noopener noreferrer">Discord</a></div>
-            `;
-        }
-
-        // Tutorial modal
-        function openTutorial() {
-            const body = document.body;
-            const modal = document.createElement('div');
-            modal.className = 'modal-backdrop';
-            modal.innerHTML = `
-                <div class="modal-card">
-                    <div class="flex justify-between items-start mb-3">
-                        <h3 class="text-xl font-bold">Welcome to ContentRate</h3>
-                        <button id="closeTutorialBtn" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
-                    </div>
-                    <div class="text-sm leading-6 text-gray-300">
-                        <p><strong>What this app shows:</strong></p>
-                        <ul class="list-disc ml-5 mt-2">
-                            <li>The leaderboard shows each farmer's overall average (based on the most recent 14 scores), their performance grade, and their latest score.</li>
-                            <li>Use the <em>Sort by</em> dropdown to reorder the leaderboard by name, average, performance grade, or latest score.</li>
-                            <li>An arrow next to the latest score shows if that score is better (▲), worse (▼) or equal (→) compared to the previous score.</li>
-                            <li>If a farmer has 3 or more consecutive ratings ≥ 7.0, a 🔥 appears beside their name to signal a hot streak.</li>
-                            <li>In a farmer's profile, each score in the history shows how that score placed among all farmers for the same date (e.g. "3rd").</li>
+                        <ul class="divide-y divide-gray-700 border border-gray-700 rounded-xl p-4 bg-gray-700">
+                            ${scoreHistoryHtml}
                         </ul>
-                        <p class="mt-3"><strong>Profile view:</strong> Click a farmer to see a bar chart of their most recent scores and full score history.</p>
-                        <p class="mt-3">Footer shows when the app was last updated and the current version.</p>
-                        <p class="mt-3">That's it — enjoy!</p>
                     </div>
-                    <div class="mt-4 flex justify-end"><button id="gotItBtn" class="px-4 py-2 bg-indigo-600 rounded-md text-white">Got it</button></div>
                 </div>
             `;
-            body.appendChild(modal);
-            function closeModal(){ modal.remove(); }
-            modal.querySelector('#closeTutorialBtn').onclick = closeModal;
-            modal.querySelector('#gotItBtn').onclick = closeModal;
-            modal.addEventListener('click', (e)=>{ if (e.target === modal) closeModal(); });
         }
 
-        // Initialize on load
+        // Initialize the app on load
         window.onload = initializeData;
+
     </script>
 </body>
 </html>
+
+
 
