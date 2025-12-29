@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ContentRate Pro | Live Sheets Hub</title>
+    <title>ContentRate Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -28,7 +28,7 @@
         <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
             <div>
                 <h1 class="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">ContentRate <span class="text-white">Pro</span></h1>
-                <p class="text-slate-500 font-medium">Content Visualized</p>
+                <p class="text-slate-500 font-medium">Content Farming Visualized</p>
             </div>
             <div class="flex items-center gap-4">
                 <div id="syncStatus" class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mr-4 flex items-center gap-2">
@@ -42,7 +42,7 @@
 
         <div id="loading-state" class="flex flex-col items-center justify-center py-20">
             <div class="loading-spinner mb-4"></div>
-            <p class="text-slate-500 font-bold animate-pulse">FETCHING LIVE DATA...</p>
+            <p class="text-slate-500 font-bold animate-pulse">FETCHING LE DATA...</p>
         </div>
 
         <main id="view-container" class="hidden"></main>
@@ -67,11 +67,11 @@
         let dailyBestScores = {};
 
         function getHexColor(score) {
-            if (score <= 5.9) return '#ef4444';
-            if (score <= 6.4) return '#f97316';
-            if (score <= 6.9) return '#eab308';
-            if (score <= 7.9) return '#22c55e';
-            if (score <= 8.9) return '#3b82f6';
+            if (score <= 5.99) return '#ef4444';
+            if (score <= 6.49) return '#f97316';
+            if (score <= 6.99) return '#eab308';
+            if (score <= 7.99) return '#22c55e';
+            if (score <= 8.99) return '#3b82f6';
             return '#a855f7';
         }
 
@@ -157,7 +157,7 @@
         }
 
         function calculateGrade(score) {
-            if (score >= 8.5) return { label: 'S-Tier', color: 'bg-purple-500/10 text-purple-400 border-purple-500/30' };
+            if (score >= 8.0) return { label: 'S-Tier', color: 'bg-purple-500/10 text-purple-400 border-purple-500/30' };
             if (score >= 7.5) return { label: 'A-Tier', color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30' };
             if (score >= 6.5) return { label: 'B-Tier', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' };
             return { label: 'C-Tier', color: 'bg-slate-500/10 text-slate-400 border-slate-500/30' };
@@ -390,3 +390,4 @@
     </script>
 </body>
 </html>
+
