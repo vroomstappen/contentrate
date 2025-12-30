@@ -30,6 +30,15 @@
                 <h1 class="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">ContentRate <span class="text-white">Pro</span></h1>
                 <p class="text-slate-500 font-medium">Content Farming Visualized</p>
             </div>
+
+            <div class="glass-card px-8 py-3 rounded-2xl flex flex-col items-center border border-slate-700/50 shadow-lg">
+                <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400 mb-1">Current Network Quality</span>
+                <div class="flex items-baseline gap-2">
+                    <span id="networkQualityValue" class="text-3xl font-black text-slate-200">--</span>
+                    <span class="text-xs text-slate-500 font-bold uppercase">Live Avg</span>
+                </div>
+            </div>
+
             <div class="flex items-center gap-4">
                 <div id="syncStatus" class="text-[10px] font-bold uppercase tracking-widest text-slate-500 mr-4 flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full bg-emerald-500"></div> Sync Active
@@ -59,7 +68,7 @@
     </div>
 
     <script>
-        // REPLACE THIS URL WITH YOUR GOOGLE SHEETS CSV URL
+        // REPLACE THIS URL WITH YOUR GOOGLE SHEETS CSV URL IF NEEDED
         const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSMTqwP3ViGcOKh0lYRGL9rdAL-Q84U85iZSLTqwdT3OGXKhMvIsI-pNC_cbRjcod0teMJ7YbRXREhy/pub?gid=607342177&single=true&output=csv';
 
         let processedFarmers = [];
@@ -76,11 +85,11 @@
         }
 
         function getTailwindColor(score) {
-            if (score <= 5.9) return 'text-red-500';
-            if (score <= 6.4) return 'text-orange-500';
-            if (score <= 6.9) return 'text-yellow-500';
-            if (score <= 7.9) return 'text-green-500';
-            if (score <= 8.9) return 'text-blue-500';
+            if (score <= 5.99) return 'text-red-500';
+            if (score <= 6.49) return 'text-orange-500';
+            if (score <= 6.99) return 'text-yellow-500';
+            if (score <= 7.99) return 'text-green-500';
+            if (score <= 8.99) return 'text-blue-500';
             return 'text-purple-500';
         }
 
@@ -150,6 +159,17 @@
                     grade: calculateGrade(avg)
                 };
             }).sort((a, b) => b.currentAvg - a.currentAvg);
+
+            // --- CALCULATE NETWORK QUALITY (Avg of Latest Scores) ---
+            const latestScoresSum = processedFarmers.reduce((sum, f) => {
+                const latest = f.scores[0] ? f.scores[0].score : 0;
+                return sum + latest;
+            }, 0);
+            
+            const networkQuality = processedFarmers.length > 0 ? (latestScoresSum / processedFarmers.length) : 0;
+            const qualityEl = document.getElementById('networkQualityValue');
+            qualityEl.innerText = networkQuality.toFixed(2);
+            qualityEl.className = `text-3xl font-black ${getTailwindColor(networkQuality)}`;
 
             document.getElementById('loading-state').classList.add('hidden');
             document.getElementById('view-container').classList.remove('hidden');
