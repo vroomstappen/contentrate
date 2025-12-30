@@ -169,35 +169,58 @@
                 <div class="grid grid-cols-1 gap-4 animate-slide-up">
                     <div class="grid grid-cols-12 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
                         <div class="col-span-1">Rank</div>
-                        <div class="col-span-5">Farmer Profile</div>
+                        <div class="col-span-4">Farmer Profile</div>
                         <div class="col-span-2 text-center">Avg (14s)</div>
-                        <div class="col-span-2 text-center">Status</div>
+                        <div class="col-span-2 text-center">Latest</div>
+                        <div class="col-span-1 text-center">Status</div>
                         <div class="col-span-2 text-right">Compare</div>
                     </div>
-                    ${processedFarmers.map((f, i) => `
+                    ${processedFarmers.map((f, i) => {
+                        const latest = f.scores[0];
+                        const latestScore = latest ? latest.score : 0;
+                        const latestColor = getTailwindColor(latestScore);
+                        // Check if the latest score is the best score of that specific day
+                        const isBestOfDay = latest && latest.score === dailyBestScores[latest.date];
+
+                        return `
                         <div class="glass-card grid grid-cols-12 items-center p-5 rounded-2xl cursor-pointer" onclick="renderProfile('${f.id}')">
                             <div class="col-span-1 font-black text-slate-500 text-lg italic">#${i + 1}</div>
-                            <div class="col-span-5 flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center font-bold text-indigo-400 border border-slate-700">${f.name[0]}</div>
+                            
+                            <div class="col-span-4 flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center font-bold text-indigo-400 border border-slate-700">
+                                    ${f.name[0]}
+                                </div>
                                 <div>
-                                    <div class="font-bold text-white text-lg">${f.name}</div>
+                                    <div class="font-bold text-white text-lg flex items-center gap-2">
+                                        ${f.name}
+                                        ${isBestOfDay ? '<i data-lucide="star" class="w-4 h-4 text-yellow-500 fill-yellow-500"></i>' : ''}
+                                    </div>
                                     <div class="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">${f.accolades[0] || 'Contributor'}</div>
                                 </div>
                             </div>
+                            
                             <div class="col-span-2 flex justify-center items-center gap-3">
                                 <span class="text-xl font-black ${getTailwindColor(f.currentAvg)}">${f.currentAvg}</span>
                                 ${getTrendIcon(f.trend)}
                             </div>
-                            <div class="col-span-2 flex justify-center">
+
+                            <div class="col-span-2 flex justify-center items-center">
+                                <span class="text-lg font-black ${latestColor} bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700/50">
+                                    ${latestScore.toFixed(1)}
+                                </span>
+                            </div>
+
+                            <div class="col-span-1 flex justify-center">
                                 <span class="grade-badge ${f.grade.color}">${f.grade.label}</span>
                             </div>
+                            
                             <div class="col-span-2 text-right">
                                 <button onclick="event.stopPropagation(); addToCompare('${f.id}')" class="p-2.5 hover:bg-indigo-500/20 rounded-xl text-slate-500 hover:text-indigo-400 transition border border-transparent hover:border-indigo-500/30">
                                     <i data-lucide="${compareSelection.includes(f.id) ? 'check-circle-2' : 'plus-circle'}" class="w-5 h-5"></i>
                                 </button>
                             </div>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             `;
             lucide.createIcons();
@@ -390,4 +413,3 @@
     </script>
 </body>
 </html>
-
