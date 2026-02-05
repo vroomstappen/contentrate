@@ -29,13 +29,13 @@
         <header class="flex flex-col xl:flex-row justify-between items-center mb-10 gap-6">
             <div class="text-center xl:text-left">
                 <h1 class="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">ContentRate <span class="text-white">Manager</span></h1>
-                <p class="text-slate-500 font-medium">The Wikipedia Of Content Farming</p>
+                <p class="text-slate-500 font-medium">Describing content with numbers.</p>
             </div>
 
             <div class="glass-card px-6 py-3 rounded-2xl flex flex-wrap justify-center items-center gap-6 border border-amber-500/20 shadow-lg shadow-amber-900/10">
                 
                 <div class="flex flex-col items-end">
-                    <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Current CP</span>
+                    <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Liquid CP</span>
                     <div class="flex items-center gap-2">
                         <i data-lucide="coins" class="w-5 h-5 text-amber-400 fill-amber-400"></i>
                         <span id="walletBalance" class="text-2xl font-black text-white">100</span>
@@ -109,7 +109,7 @@
         const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSMTqwP3ViGcOKh0lYRGL9rdAL-Q84U85iZSLTqwdT3OGXKhMvIsI-pNC_cbRjcod0teMJ7YbRXREhy/pub?gid=607342177&single=true&output=csv';
         const MAX_ROSTER_SIZE = 4;
         const BENCHMARK_SCORE = 7.0;
-        const COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 Hours
+        const COOLDOWN_MS = 24 * 60 * 60 * 1000; 
 
         // --- STATE MANAGEMENT ---
         let processedFarmers = [];
@@ -119,7 +119,7 @@
         
         let wallet = {
             balance: 100,
-            roster: [], // Array of farmer IDs
+            roster: [],
             lastCollect: 0
         };
 
@@ -142,6 +142,15 @@
             return 'text-purple-500';
         }
 
+        function getScoreBgColor(score) {
+            if (score <= 5.99) return 'bg-red-500';
+            if (score <= 6.49) return 'bg-orange-500';
+            if (score <= 6.99) return 'bg-yellow-500';
+            if (score <= 7.99) return 'bg-emerald-500';
+            if (score <= 8.99) return 'bg-blue-500';
+            return 'bg-purple-500';
+        }
+
         function showToast(msg, type = 'neutral') {
             const toast = document.getElementById('toast');
             const msgEl = document.getElementById('toastMsg');
@@ -158,12 +167,10 @@
 
         // --- APP INITIALIZATION ---
         async function init() {
-            // Load saved state
             const savedWallet = localStorage.getItem('cp_manager_save_v4'); 
             if (savedWallet) {
                 wallet = JSON.parse(savedWallet);
             }
-            
             startCooldownTimer();
 
             try {
@@ -212,8 +219,6 @@
                 const avg = recentScores.reduce((a, b) => a + b.score, 0) / recentScores.length;
                 const prevAvg = f.scores.slice(1, 15).length > 0 ? f.scores.slice(1, 15).reduce((a, b) => a + b.score, 0) / f.scores.slice(1, 15).length : avg;
                 const currentAvg = parseFloat(avg.toFixed(2));
-                
-                // PRICING LOGIC: (Avg - 6.0) * 40. Floor at 5.
                 const price = Math.max(5, Math.floor((currentAvg - 6.0) * 40));
 
                 return {
@@ -241,15 +246,12 @@
         // --- MANAGER LOGIC ---
 
         function updateHUD() {
-            // Update Balance
             document.getElementById('walletBalance').innerText = wallet.balance.toFixed(0);
             
-            // Update Roster Count
             const rosterEl = document.getElementById('rosterCount');
             rosterEl.innerText = `${wallet.roster.length}/${MAX_ROSTER_SIZE}`;
             rosterEl.className = wallet.roster.length >= MAX_ROSTER_SIZE ? 'text-xl font-black text-red-400' : 'text-xl font-black text-indigo-400';
 
-            // Update Net Worth
             let assetValue = 0;
             wallet.roster.forEach(id => {
                 const f = processedFarmers.find(x => x.id === id);
@@ -296,12 +298,10 @@
             const isOwned = wallet.roster.includes(farmerId);
             
             if (isOwned) {
-                // SELL LOGIC
                 wallet.balance += farmer.price;
                 wallet.roster = wallet.roster.filter(id => id !== farmerId);
                 showToast(`Sold ${farmer.name} for ${farmer.price} CP`, "neutral");
             } else {
-                // BUY LOGIC
                 if (wallet.roster.length >= MAX_ROSTER_SIZE) return showToast(`Roster Full (${MAX_ROSTER_SIZE} Max)`, "error");
                 if (wallet.balance < farmer.price) return showToast(`Insufficient CP. Cost: ${farmer.price}`, "error");
 
@@ -311,9 +311,7 @@
             }
 
             updateHUD();
-            // Re-render whichever view we are on
             if(document.getElementById('searchInput')) renderLeaderboard();
-            // If profile is open, re-render it
             const profileNameElement = document.querySelector('#view-container h2');
             if (profileNameElement && profileNameElement.innerText === farmer.name) {
                 renderProfile(farmerId);
@@ -326,22 +324,17 @@
             if (wallet.roster.length === 0) return showToast("Recruit players first!", "neutral");
 
             let totalChange = 0;
-            let results = [];
-
+            
             wallet.roster.forEach(id => {
                 const f = processedFarmers.find(x => x.id === id);
                 if (f && f.scores.length > 0) {
                     const score = f.scores[0].score;
-                    // FORMULA: (Score - 7.0) * 10
-                    // Example: 7.5 - 7.0 = 0.5 * 10 = 5 CP
-                    // Example: 6.5 - 7.0 = -0.5 * 10 = -5 CP
                     const gain = (score - BENCHMARK_SCORE) * 10;
                     totalChange += gain;
                 }
             });
 
             wallet.balance += totalChange;
-            // Balance can go negative in this mode? Let's say floor is 0.
             if(wallet.balance < 0) wallet.balance = 0;
 
             wallet.lastCollect = now;
@@ -366,7 +359,7 @@
                     <div class="hidden md:grid grid-cols-12 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
                         <div class="col-span-1">Rank</div>
                         <div class="col-span-4">Farmer Profile</div>
-                        <div class="col-span-2 text-center">Avg</div>
+                        <div class="col-span-2 text-center">Avg & Form</div>
                         <div class="col-span-2 text-center">Cost</div>
                         <div class="col-span-2 text-center">Latest</div>
                         <div class="col-span-1 text-right">Recruit</div>
@@ -376,6 +369,7 @@
                         const latestScore = latest ? latest.score : 0;
                         const isOwned = wallet.roster.includes(f.id);
                         const isBestOfDay = latest && latest.score === dailyBestScores[latest.date];
+                        const last5 = f.scores.slice(0, 5).reverse(); // FLIPPED TO LEFT-TO-RIGHT
 
                         return `
                         <div class="glass-card grid grid-cols-12 items-center p-5 rounded-2xl cursor-pointer hover:bg-slate-800/50 group" onclick="renderProfile('${f.id}')">
@@ -395,9 +389,16 @@
                                 </div>
                             </div>
                             
-                            <div class="col-span-4 md:col-span-2 flex justify-end md:justify-center items-center gap-3">
-                                <span class="text-xl font-black ${getTailwindColor(f.currentAvg)}">${f.currentAvg}</span>
-                                ${getTrendIcon(f.trend)}
+                            <div class="col-span-4 md:col-span-2 flex flex-col justify-center items-end md:items-center">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xl font-black ${getTailwindColor(f.currentAvg)}">${f.currentAvg}</span>
+                                    ${getTrendIcon(f.trend)}
+                                </div>
+                                <div class="flex gap-1 mt-1">
+                                    ${last5.map(s => `
+                                        <div class="w-2 h-2 rounded-sm ${getScoreBgColor(s.score)}" title="${s.score} (${s.date})"></div>
+                                    `).join('')}
+                                </div>
                             </div>
 
                             <div class="hidden md:flex col-span-2 justify-center items-center gap-1">
@@ -543,17 +544,13 @@
             });
         }
 
-        // --- COMPARE MODE ---
-        function addToCompare(id) { /* Compare logic here if needed (omitted for brevity, handled by existing profile/leaderboard calls) */ }
         function toggleCompareMode() {
             const modal = document.getElementById('compareModal');
             modal.classList.toggle('hidden');
             if (!modal.classList.contains('hidden')) renderComparison();
         }
         
-        // Simplified comparison render for this snippet
         function renderComparison() {
-             // Logic remains from previous versions (uses processedFarmers to find 2 selections)
              document.getElementById('compareContent').innerHTML = '<p class="text-slate-500 text-center col-span-2">Select farmers from leaderboard to compare.</p>';
         }
 
