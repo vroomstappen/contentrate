@@ -29,11 +29,10 @@
         <header class="flex flex-col xl:flex-row justify-between items-center mb-10 gap-6">
             <div class="text-center xl:text-left">
                 <h1 class="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">ContentRate <span class="text-white">Manager</span></h1>
-                <p class="text-slate-500 font-medium">Describing content with numbers.</p>
+                <p class="text-slate-500 font-medium">Describing content in numbers.</p>
             </div>
 
             <div class="glass-card px-6 py-3 rounded-2xl flex flex-wrap justify-center items-center gap-6 border border-amber-500/20 shadow-lg shadow-amber-900/10">
-                
                 <div class="flex flex-col items-end">
                     <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Current CP</span>
                     <div class="flex items-center gap-2">
@@ -41,9 +40,7 @@
                         <span id="walletBalance" class="text-2xl font-black text-white">100</span>
                     </div>
                 </div>
-
                 <div class="h-8 w-px bg-slate-700"></div>
-
                 <div class="flex flex-col items-end">
                     <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Net Worth</span>
                     <div class="flex items-center gap-2">
@@ -51,16 +48,12 @@
                         <span id="netWorth" class="text-xl font-bold text-emerald-400">--</span>
                     </div>
                 </div>
-
                 <div class="h-8 w-px bg-slate-700"></div>
-
                 <div class="flex flex-col items-center">
                     <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Roster</span>
                     <span id="rosterCount" class="text-xl font-black text-indigo-400">0/4</span>
                 </div>
-
                 <div class="h-8 w-px bg-slate-700"></div>
-
                 <div class="flex gap-2">
                     <button onclick="collectRewards()" id="collectBtn" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition border border-amber-500/50 flex items-center gap-2">
                         <i data-lucide="play-circle" class="w-4 h-4"></i> 
@@ -91,12 +84,12 @@
     </div>
 
     <div id="compareModal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-5xl rounded-3xl overflow-y-auto max-h-[90vh] shadow-2xl custom-scroll relative">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-6xl rounded-3xl overflow-y-auto max-h-[95vh] shadow-2xl custom-scroll relative">
             <div class="sticky top-0 bg-slate-900/90 backdrop-blur-md p-6 border-b border-slate-800 flex justify-between items-center z-20">
                 <h2 class="text-xl font-bold flex items-center gap-2 text-indigo-400">Head-to-Head Analysis</h2>
                 <button onclick="toggleCompareMode()" class="p-2 hover:bg-slate-800 rounded-full transition"><i data-lucide="x"></i></button>
             </div>
-            <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-10" id="compareContent"></div>
+            <div class="p-8" id="compareContent"></div>
         </div>
     </div>
 
@@ -105,13 +98,10 @@
     </div>
 
     <script>
-        // --- CONFIGURATION ---
         const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSMTqwP3ViGcOKh0lYRGL9rdAL-Q84U85iZSLTqwdT3OGXKhMvIsI-pNC_cbRjcod0teMJ7YbRXREhy/pub?gid=607342177&single=true&output=csv';
         const MAX_ROSTER_SIZE = 4;
-        const BENCHMARK_SCORE = 7.0;
         const COOLDOWN_MS = 24 * 60 * 60 * 1000; 
 
-        // --- STATE MANAGEMENT ---
         let processedFarmers = [];
         let compareSelection = [];
         let dailyBestScores = {};
@@ -123,7 +113,6 @@
             lastCollect: 0
         };
 
-        // --- UTILITY FUNCTIONS ---
         function getHexColor(score) {
             if (score <= 5.99) return '#ef4444';
             if (score <= 6.49) return '#f97316';
@@ -165,9 +154,8 @@
             setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
         }
 
-        // --- APP INITIALIZATION ---
         async function init() {
-            const savedWallet = localStorage.getItem('cp_manager_save_v4'); 
+            const savedWallet = localStorage.getItem('cp_manager_save_v5_safezone'); 
             if (savedWallet) {
                 wallet = JSON.parse(savedWallet);
             }
@@ -182,8 +170,7 @@
                     complete: (results) => { processSheetData(results.data); }
                 });
             } catch (error) {
-                console.error("Error loading data:", error);
-                document.getElementById('loading-state').innerHTML = `<p class="text-red-400 font-bold">Connection Failed. Check Data Source.</p>`;
+                document.getElementById('loading-state').innerHTML = `<p class="text-red-400 font-bold">Connection Failed.</p>`;
             }
         }
 
@@ -198,13 +185,7 @@
                         id: row.Name.toLowerCase().replace(/\s/g, '-'),
                         name: row.Name,
                         scores: [],
-                        attributes: {
-                            creativity: row.Creativity || 70,
-                            consistency: row.Consistency || 70,
-                            attendance: row.Attendance || 70,
-                            presence: row.Presence || 70,
-                            quality: row.Quality || 70
-                        }
+                        attributes: { creativity: row.Creativity || 70, consistency: row.Consistency || 70, attendance: row.Attendance || 70, presence: row.Presence || 70, quality: row.Quality || 70 }
                     };
                 }
                 farmersMap[row.Name].scores.push({ date: row.Date, score: parseFloat(row.Score) });
@@ -221,12 +202,32 @@
                 const currentAvg = parseFloat(avg.toFixed(2));
                 const price = Math.max(5, Math.floor((currentAvg - 6.0) * 40));
 
+                // NEW METRICS FOR COMPARISON
+                const best14 = Math.max(...recentScores.map(s => s.score));
+                const worst14 = Math.min(...recentScores.map(s => s.score));
+                let starCount = 0;
+                f.scores.forEach(s => { if(s.score === dailyBestScores[s.date]) starCount++; });
+                
+                // Rolling Avg History (Last 5 Updates)
+                let rollingHistory = [];
+                for(let i=0; i<5; i++) {
+                    const slice = f.scores.slice(i, i+14);
+                    if(slice.length > 0) {
+                        const ra = slice.reduce((a, b) => a + b.score, 0) / slice.length;
+                        rollingHistory.push(parseFloat(ra.toFixed(2)));
+                    } else {
+                        rollingHistory.push(null);
+                    }
+                }
+                // Reverse to have oldest first for chart
+                rollingHistory.reverse();
+
                 return {
                     ...f,
-                    currentAvg: currentAvg,
-                    price: price,
+                    currentAvg, price,
                     trend: avg > prevAvg ? 'up' : avg < prevAvg ? 'down' : 'equal',
-                    grade: calculateGrade(avg)
+                    grade: calculateGrade(avg),
+                    stats: { best14, worst14, starCount, rollingHistory }
                 };
             }).sort((a, b) => b.currentAvg - a.currentAvg);
 
@@ -243,28 +244,20 @@
             return { label: 'C-Tier', color: 'bg-slate-500/10 text-slate-400 border-slate-500/30' };
         }
 
-        // --- MANAGER LOGIC ---
-
         function updateHUD() {
             document.getElementById('walletBalance').innerText = wallet.balance.toFixed(0);
-            
             const rosterEl = document.getElementById('rosterCount');
             rosterEl.innerText = `${wallet.roster.length}/${MAX_ROSTER_SIZE}`;
             rosterEl.className = wallet.roster.length >= MAX_ROSTER_SIZE ? 'text-xl font-black text-red-400' : 'text-xl font-black text-indigo-400';
-
             let assetValue = 0;
-            wallet.roster.forEach(id => {
-                const f = processedFarmers.find(x => x.id === id);
-                if (f) assetValue += f.price;
-            });
+            wallet.roster.forEach(id => { const f = processedFarmers.find(x => x.id === id); if (f) assetValue += f.price; });
             document.getElementById('netWorth').innerText = (wallet.balance + assetValue).toFixed(0);
-
-            localStorage.setItem('cp_manager_save_v4', JSON.stringify(wallet));
+            localStorage.setItem('cp_manager_save_v5_safezone', JSON.stringify(wallet));
         }
 
         function resetAccount() {
             if(confirm("Are you sure? This will wipe your team and reset CP to 100.")) {
-                localStorage.removeItem('cp_manager_save_v4');
+                localStorage.removeItem('cp_manager_save_v5_safezone');
                 location.reload();
             }
         }
@@ -272,18 +265,13 @@
         function startCooldownTimer() {
             if(cooldownTimerInterval) clearInterval(cooldownTimerInterval);
             const checkTimer = () => {
-                const now = Date.now();
-                const last = wallet.lastCollect || 0;
-                const diff = now - last;
+                const diff = Date.now() - (wallet.lastCollect || 0);
                 const btn = document.getElementById('collectBtn');
                 const btnText = document.getElementById('collectBtnText');
-                
                 if (diff < COOLDOWN_MS) {
                     const remaining = COOLDOWN_MS - diff;
-                    const hours = Math.floor(remaining / (1000 * 60 * 60));
-                    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
                     btn.classList.add('btn-disabled');
-                    btnText.innerText = `${hours}h ${minutes}m`;
+                    btnText.innerText = `${Math.floor(remaining/3600000)}h ${Math.floor((remaining%3600000)/60000)}m`;
                 } else {
                     btn.classList.remove('btn-disabled');
                     btnText.innerText = 'Run Daily Match';
@@ -296,58 +284,43 @@
         function handleRecruit(farmerId) {
             const farmer = processedFarmers.find(f => f.id === farmerId);
             const isOwned = wallet.roster.includes(farmerId);
-            
             if (isOwned) {
                 wallet.balance += farmer.price;
                 wallet.roster = wallet.roster.filter(id => id !== farmerId);
                 showToast(`Sold ${farmer.name} for ${farmer.price} CP`, "neutral");
             } else {
-                if (wallet.roster.length >= MAX_ROSTER_SIZE) return showToast(`Roster Full (${MAX_ROSTER_SIZE} Max)`, "error");
-                if (wallet.balance < farmer.price) return showToast(`Insufficient CP. Cost: ${farmer.price}`, "error");
-
+                if (wallet.roster.length >= MAX_ROSTER_SIZE) return showToast(`Roster Full`, "error");
+                if (wallet.balance < farmer.price) return showToast(`Insufficient CP`, "error");
                 wallet.balance -= farmer.price;
                 wallet.roster.push(farmerId);
                 showToast(`Recruited ${farmer.name}!`, "gold");
             }
-
             updateHUD();
             if(document.getElementById('searchInput')) renderLeaderboard();
-            const profileNameElement = document.querySelector('#view-container h2');
-            if (profileNameElement && profileNameElement.innerText === farmer.name) {
-                renderProfile(farmerId);
-            }
+            const profileHeader = document.querySelector('#view-container h2');
+            if(profileHeader && profileHeader.innerText === farmer.name) renderProfile(farmerId);
         }
 
         function collectRewards() {
             const now = Date.now();
-            if (now - (wallet.lastCollect || 0) < COOLDOWN_MS) return showToast("Matchday already completed today.", "error");
+            if (now - (wallet.lastCollect || 0) < COOLDOWN_MS) return showToast("Already played today.", "error");
             if (wallet.roster.length === 0) return showToast("Recruit players first!", "neutral");
-
             let totalChange = 0;
-            
             wallet.roster.forEach(id => {
                 const f = processedFarmers.find(x => x.id === id);
                 if (f && f.scores.length > 0) {
                     const score = f.scores[0].score;
-                    const gain = (score - BENCHMARK_SCORE) * 10;
-                    totalChange += gain;
+                    if (score >= 7.0) totalChange += (score - 7.0) * 10;
+                    else if (score < 6.5) totalChange += (score - 6.5) * 10;
                 }
             });
-
             wallet.balance += totalChange;
             if(wallet.balance < 0) wallet.balance = 0;
-
             wallet.lastCollect = now;
             updateHUD();
             startCooldownTimer();
-            
-            const emoji = totalChange >= 0 ? '🤑' : '📉';
-            const color = totalChange >= 0 ? 'gold' : 'error';
-            const sign = totalChange >= 0 ? '+' : '';
-            showToast(`${emoji} Matchday Result: ${sign}${totalChange.toFixed(1)} CP`, color);
+            showToast(`${totalChange >= 0 ? '🤑' : '📉'} Matchday: ${totalChange >= 0 ? '+' : ''}${totalChange.toFixed(1)} CP`, totalChange >= 0 ? 'gold' : 'error');
         }
-
-        // --- UI RENDERING ---
 
         function renderLeaderboard() {
             const query = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase() : '';
@@ -362,19 +335,18 @@
                         <div class="col-span-2 text-center">Avg & Form</div>
                         <div class="col-span-2 text-center">Cost</div>
                         <div class="col-span-2 text-center">Latest</div>
-                        <div class="col-span-1 text-right">Recruit</div>
+                        <div class="col-span-1 text-right">Actions</div>
                     </div>
                     ${filtered.map((f, i) => {
                         const latest = f.scores[0];
                         const latestScore = latest ? latest.score : 0;
                         const isOwned = wallet.roster.includes(f.id);
                         const isBestOfDay = latest && latest.score === dailyBestScores[latest.date];
-                        const last5 = f.scores.slice(0, 5).reverse(); // FLIPPED TO LEFT-TO-RIGHT
+                        const last5 = f.scores.slice(0, 5).reverse();
 
                         return `
                         <div class="glass-card grid grid-cols-12 items-center p-5 rounded-2xl cursor-pointer hover:bg-slate-800/50 group" onclick="renderProfile('${f.id}')">
                             <div class="col-span-2 md:col-span-1 font-black text-slate-500 text-lg italic">#${i + 1}</div>
-                            
                             <div class="col-span-6 md:col-span-4 flex items-center gap-4">
                                 <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center font-bold text-indigo-400 border border-slate-700 text-xl relative">
                                     ${f.name[0]}
@@ -388,31 +360,26 @@
                                     <div class="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Contributor</div>
                                 </div>
                             </div>
-                            
                             <div class="col-span-4 md:col-span-2 flex flex-col justify-center items-end md:items-center">
                                 <div class="flex items-center gap-2">
                                     <span class="text-xl font-black ${getTailwindColor(f.currentAvg)}">${f.currentAvg}</span>
                                     ${getTrendIcon(f.trend)}
                                 </div>
                                 <div class="flex gap-1 mt-1">
-                                    ${last5.map(s => `
-                                        <div class="w-2 h-2 rounded-sm ${getScoreBgColor(s.score)}" title="${s.score} (${s.date})"></div>
-                                    `).join('')}
+                                    ${last5.map(s => `<div class="w-2 h-2 rounded-sm ${getScoreBgColor(s.score)}" title="${s.score} (${s.date})"></div>`).join('')}
                                 </div>
                             </div>
-
                             <div class="hidden md:flex col-span-2 justify-center items-center gap-1">
                                 <span class="text-lg font-black text-amber-400">${f.price}</span>
                                 <span class="text-xs text-amber-500/50 font-bold">CP</span>
                             </div>
-
                             <div class="hidden md:flex col-span-2 justify-center">
-                                <span class="text-lg font-black ${getTailwindColor(latestScore)} bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700/50">
-                                    ${latestScore.toFixed(1)}
-                                </span>
+                                <span class="text-lg font-black ${getTailwindColor(latestScore)} bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700/50">${latestScore.toFixed(1)}</span>
                             </div>
-
-                            <div class="hidden md:flex col-span-1 justify-end">
+                            <div class="hidden md:flex col-span-1 justify-end gap-2">
+                                <button onclick="event.stopPropagation(); addToCompare('${f.id}')" class="p-2 rounded-lg transition hover:bg-slate-700 text-slate-500 hover:text-indigo-400" title="Compare">
+                                    <i data-lucide="${compareSelection.includes(f.id) ? 'check-circle' : 'swords'}" class="w-5 h-5"></i>
+                                </button>
                                 <button onclick="event.stopPropagation(); handleRecruit('${f.id}')" class="p-2 rounded-lg transition ${isOwned ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'}">
                                     <i data-lucide="${isOwned ? 'x' : 'user-plus'}" class="w-5 h-5"></i>
                                 </button>
@@ -428,13 +395,13 @@
             const f = processedFarmers.find(x => x.id === id);
             const container = document.getElementById('view-container');
             const isOwned = wallet.roster.includes(f.id);
+            const isComparing = compareSelection.includes(f.id);
             
             container.innerHTML = `
                 <div class="animate-slide-up pb-10">
                     <button onclick="renderLeaderboard()" class="mb-8 flex items-center gap-2 text-slate-400 hover:text-white transition font-bold text-sm uppercase tracking-widest">
                         <i data-lucide="chevron-left" class="w-4 h-4"></i> Back to Database
                     </button>
-                    
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div class="lg:col-span-1 space-y-6">
                             <div class="glass-card p-8 rounded-[2rem] text-center border-b-4 ${isOwned ? 'border-emerald-500' : 'border-indigo-500'}">
@@ -444,7 +411,6 @@
                                 </div>
                                 <h2 class="text-3xl font-black mb-1">${f.name}</h2>
                                 <p class="text-indigo-400 font-bold mb-6 uppercase tracking-widest text-xs">${f.grade.label}</p>
-                                
                                 <div class="grid grid-cols-2 gap-3 mb-6">
                                     <div class="bg-slate-900/50 p-3 rounded-2xl border border-slate-800">
                                         <span class="block text-[8px] text-slate-500 uppercase font-black mb-1">Valuation</span>
@@ -455,93 +421,42 @@
                                         <span class="text-xl font-black ${getTailwindColor(f.currentAvg)}">${f.currentAvg}</span>
                                     </div>
                                 </div>
-
-                                <button onclick="handleRecruit('${f.id}')" class="w-full py-4 rounded-xl font-black uppercase tracking-widest text-xs transition shadow-lg flex items-center justify-center gap-2 ${isOwned 
-                                    ? 'bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50' 
-                                    : 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/20'}">
-                                    <i data-lucide="${isOwned ? 'user-minus' : 'user-plus'}" class="w-4 h-4"></i>
-                                    ${isOwned ? `Release (+${f.price} CP)` : `Recruit (-${f.price} CP)`}
-                                </button>
+                                <div class="text-[10px] text-slate-500 mb-4 bg-slate-900/50 p-2 rounded-lg">Payout: &gt;7.0 Gain, &lt;6.5 Loss, 6.5-6.9 Safe</div>
+                                <div class="flex gap-3">
+                                    <button onclick="addToCompare('${f.id}')" class="flex-1 py-4 rounded-xl font-black uppercase tracking-widest text-xs transition shadow-lg flex items-center justify-center gap-2 ${isComparing ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">
+                                        <i data-lucide="${isComparing ? 'check' : 'swords'}" class="w-4 h-4"></i> ${isComparing ? 'Selected' : 'Compare'}
+                                    </button>
+                                    <button onclick="handleRecruit('${f.id}')" class="flex-[2] py-4 rounded-xl font-black uppercase tracking-widest text-xs transition shadow-lg flex items-center justify-center gap-2 ${isOwned ? 'bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/20'}">
+                                        <i data-lucide="${isOwned ? 'user-minus' : 'user-plus'}" class="w-4 h-4"></i> ${isOwned ? `Release (+${f.price})` : `Recruit (-${f.price})`}
+                                    </button>
+                                </div>
                             </div>
-                            
                             <div class="glass-card p-6 rounded-3xl">
-                                <h3 class="font-black text-xs uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2">
-                                    <i data-lucide="history" class="w-4 h-4"></i> Match History
-                                </h3>
+                                <h3 class="font-black text-xs uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Match History</h3>
                                 <div class="space-y-2 max-h-[300px] overflow-y-auto custom-scroll pr-2">
-                                    ${f.scores.map(s => `
-                                        <div class="flex justify-between items-center p-3 bg-slate-900/40 rounded-xl border border-slate-800/50">
-                                            <div class="flex items-center gap-3">
-                                                <span class="text-xs font-bold text-slate-500">${s.date}</span>
-                                                ${s.score === dailyBestScores[s.date] ? '<i data-lucide="star" class="w-3.5 h-3.5 text-yellow-500 fill-yellow-500"></i>' : ''}
-                                            </div>
-                                            <span class="font-black ${getTailwindColor(s.score)}">${s.score.toFixed(1)}</span>
-                                        </div>
-                                    `).join('')}
+                                    ${f.scores.map(s => `<div class="flex justify-between items-center p-3 bg-slate-900/40 rounded-xl border border-slate-800/50"><div class="flex items-center gap-3"><span class="text-xs font-bold text-slate-500">${s.date}</span>${s.score === dailyBestScores[s.date] ? '<i data-lucide="star" class="w-3.5 h-3.5 text-yellow-500 fill-yellow-500"></i>' : ''}</div><span class="font-black ${getTailwindColor(s.score)}">${s.score.toFixed(1)}</span></div>`).join('')}
                                 </div>
                             </div>
                         </div>
-
                         <div class="lg:col-span-2 space-y-6">
-                            <div class="glass-card p-8 rounded-3xl h-[400px]">
-                                <h3 class="font-black text-xs uppercase tracking-[0.2em] text-slate-400 mb-6">Attribute DNA</h3>
-                                <canvas id="attributeChart"></canvas>
-                            </div>
-                            <div class="glass-card p-8 rounded-3xl">
-                                <h3 class="font-black text-xs uppercase tracking-[0.2em] text-slate-400 mb-6">Performance Trajectory</h3>
-                                <canvas id="historyChart" height="150"></canvas>
-                            </div>
+                            <div class="glass-card p-8 rounded-3xl h-[400px]"><h3 class="font-black text-xs uppercase tracking-[0.2em] text-slate-400 mb-6">Attribute DNA</h3><canvas id="attributeChart"></canvas></div>
+                            <div class="glass-card p-8 rounded-3xl"><h3 class="font-black text-xs uppercase tracking-[0.2em] text-slate-400 mb-6">Performance Trajectory</h3><canvas id="historyChart" height="150"></canvas></div>
                         </div>
                     </div>
                 </div>
             `;
-            
             lucide.createIcons();
             initCharts(f);
         }
 
-        // --- CHARTING & HELPERS ---
-        function getTrendIcon(trend) {
-            if (trend === 'up') return '<i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>';
-            if (trend === 'down') return '<i data-lucide="trending-down" class="w-4 h-4 text-red-400"></i>';
-            return '<i data-lucide="minus" class="w-4 h-4 text-slate-500"></i>';
-        }
-
-        function initCharts(f) {
-            new Chart(document.getElementById('attributeChart'), {
-                type: 'radar',
-                data: {
-                    labels: ['Creativity', 'Consistency', 'Attendance', 'Presence', 'Quality'],
-                    datasets: [{
-                        data: Object.values(f.attributes),
-                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                        borderColor: '#6366f1',
-                        borderWidth: 3,
-                        pointBackgroundColor: '#6366f1'
-                    }]
-                },
-                options: {
-                    scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.05)' }, pointLabels: { color: '#64748b', font: { weight: 'bold', size: 10 } } } },
-                    plugins: { legend: { display: false } }
-                }
-            });
-
-            const histData = [...f.scores].reverse().slice(-10);
-            new Chart(document.getElementById('historyChart'), {
-                type: 'bar',
-                data: {
-                    labels: histData.map(s => s.date.slice(5)),
-                    datasets: [{
-                        data: histData.map(s => s.score),
-                        backgroundColor: histData.map(s => getHexColor(s.score)),
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    plugins: { legend: { display: false } },
-                    scales: { y: { min: 0, max: 10, grid: { color: 'rgba(255,255,255,0.05)' } } }
-                }
-            });
+        function addToCompare(id) {
+            if (compareSelection.includes(id)) compareSelection = compareSelection.filter(x => x !== id);
+            else { if (compareSelection.length >= 2) compareSelection.shift(); compareSelection.push(id); }
+            document.getElementById('compareBtn').innerHTML = `<i data-lucide="swords" class="w-4 h-4"></i> Compare (${compareSelection.length})`;
+            const profileHeader = document.querySelector('#view-container h2');
+            const f = processedFarmers.find(x => x.id === id);
+            if(profileHeader && profileHeader.innerText === f.name) renderProfile(id);
+            else renderLeaderboard();
         }
 
         function toggleCompareMode() {
@@ -549,13 +464,95 @@
             modal.classList.toggle('hidden');
             if (!modal.classList.contains('hidden')) renderComparison();
         }
-        
+
         function renderComparison() {
-             document.getElementById('compareContent').innerHTML = '<p class="text-slate-500 text-center col-span-2">Select farmers from leaderboard to compare.</p>';
+            const content = document.getElementById('compareContent');
+            if (compareSelection.length < 2) { content.innerHTML = `<div class="text-center py-20 text-slate-500 font-bold uppercase tracking-widest">Select two farmers to compare</div>`; return; }
+            const f1 = processedFarmers.find(x => x.id === compareSelection[0]);
+            const f2 = processedFarmers.find(x => x.id === compareSelection[1]);
+
+            // Calculate Profitability (Risk Factor)
+            const getProfitRate = (f) => {
+                const recent = f.scores.slice(0, 14);
+                const wins = recent.filter(s => s.score >= 7.0).length;
+                return Math.round((wins / recent.length) * 100);
+            };
+
+            content.innerHTML = `
+                <div class="grid grid-cols-2 gap-8 mb-8">
+                    <div class="glass-card p-6 rounded-2xl border-t-4 border-indigo-500">
+                        <h3 class="text-2xl font-black text-white mb-1">${f1.name}</h3>
+                        <p class="text-indigo-400 font-bold text-xs uppercase mb-6">${f1.grade.label}</p>
+                        <div class="space-y-3">
+                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Best (14d)</span><span class="font-black text-emerald-400">${f1.stats.best14}</span></div>
+                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Worst (14d)</span><span class="font-black text-red-400">${f1.stats.worst14}</span></div>
+                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Stars</span><span class="font-black text-yellow-400 flex items-center gap-1">${f1.stats.starCount} <i data-lucide="star" class="w-3 h-3 fill-yellow-400"></i></span></div>
+                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Profit Rate</span><span class="font-black text-white">${getProfitRate(f1)}%</span></div>
+                        </div>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl border-t-4 border-pink-500">
+                        <h3 class="text-2xl font-black text-white mb-1">${f2.name}</h3>
+                        <p class="text-pink-400 font-bold text-xs uppercase mb-6">${f2.grade.label}</p>
+                        <div class="space-y-3">
+                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Best (14d)</span><span class="font-black text-emerald-400">${f2.stats.best14}</span></div>
+                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Worst (14d)</span><span class="font-black text-red-400">${f2.stats.worst14}</span></div>
+                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Stars</span><span class="font-black text-yellow-400 flex items-center gap-1">${f2.stats.starCount} <i data-lucide="star" class="w-3 h-3 fill-yellow-400"></i></span></div>
+                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Profit Rate</span><span class="font-black text-white">${getProfitRate(f2)}%</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Attribute DNA</h4>
+                        <canvas id="compareRadarChart"></canvas>
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Momentum (Avg Trend)</h4>
+                        <canvas id="compareLineChart"></canvas>
+                    </div>
+                </div>
+            `;
+            
+            lucide.createIcons();
+
+            new Chart(document.getElementById('compareRadarChart'), {
+                type: 'radar',
+                data: {
+                    labels: ['Creativity', 'Consistency', 'Attendance', 'Presence', 'Quality'],
+                    datasets: [
+                        { label: f1.name, data: Object.values(f1.attributes), borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.2)' },
+                        { label: f2.name, data: Object.values(f2.attributes), borderColor: '#ec4899', backgroundColor: 'rgba(236, 72, 153, 0.2)' }
+                    ]
+                },
+                options: { scales: { r: { min: 0, max: 100, ticks: { display: false } } }, plugins: { legend: { labels: { color: '#fff' } } } }
+            });
+
+            new Chart(document.getElementById('compareLineChart'), {
+                type: 'line',
+                data: {
+                    labels: ['5 Days Ago', '4 Days Ago', '3 Days Ago', 'Yesterday', 'Today'],
+                    datasets: [
+                        { label: f1.name, data: f1.stats.rollingHistory, borderColor: '#6366f1', tension: 0.4 },
+                        { label: f2.name, data: f2.stats.rollingHistory, borderColor: '#ec4899', tension: 0.4 }
+                    ]
+                },
+                options: { 
+                    scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } },
+                    plugins: { legend: { labels: { color: '#fff' } } }
+                }
+            });
+        }
+
+        // --- CHARTING & HELPERS ---
+        function getTrendIcon(trend) { if (trend === 'up') return '<i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>'; if (trend === 'down') return '<i data-lucide="trending-down" class="w-4 h-4 text-red-400"></i>'; return '<i data-lucide="minus" class="w-4 h-4 text-slate-500"></i>'; }
+        function initCharts(f) {
+            new Chart(document.getElementById('attributeChart'), { type: 'radar', data: { labels: ['Creativity', 'Consistency', 'Attendance', 'Presence', 'Quality'], datasets: [{ data: Object.values(f.attributes), backgroundColor: 'rgba(99, 102, 241, 0.2)', borderColor: '#6366f1', borderWidth: 3, pointBackgroundColor: '#6366f1' }] }, options: { scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.05)' }, pointLabels: { color: '#64748b', font: { weight: 'bold', size: 10 } } } }, plugins: { legend: { display: false } } } });
+            const histData = [...f.scores].reverse().slice(-10);
+            new Chart(document.getElementById('historyChart'), { type: 'bar', data: { labels: histData.map(s => s.date.slice(5)), datasets: [{ data: histData.map(s => s.score), backgroundColor: histData.map(s => getHexColor(s.score)), borderRadius: 8 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 10, grid: { color: 'rgba(255,255,255,0.05)' } } } } });
         }
 
         window.onload = init;
     </script>
 </body>
 </html>
-
