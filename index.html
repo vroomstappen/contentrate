@@ -12,7 +12,7 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: #f8fafc; min-height: 100vh; }
         .glass-card { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease; }
-        .glass-card:hover { border: 1px solid rgba(99, 102, 241, 0.3); }
+        .glass-card:hover { border: 1px solid rgba(99, 102, 241, 0.3); transform: translateY(-2px); }
         .custom-scroll::-webkit-scrollbar { width: 6px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -20,7 +20,45 @@
         .loading-spinner { border: 3px solid rgba(99, 102, 241, 0.1); border-top: 3px solid #6366f1; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .btn-disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
-        .grade-badge { padding: 4px 12px; border-radius: 8px; font-weight: 800; font-size: 0.7rem; text-transform: uppercase; border: 1px solid; }
+
+        /* --- SIGNATURE KING CARD --- */
+        .signature-card {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 1)) !important;
+            border: 1px solid rgba(251, 191, 36, 0.6) !important; /* Gold Border */
+            box-shadow: 0 0 25px rgba(251, 191, 36, 0.2) !important;
+        }
+
+        .signature-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.15),
+                transparent
+            );
+            transform: skewX(-20deg);
+            animation: shine 4s infinite linear;
+            pointer-events: none;
+        }
+
+        @keyframes shine {
+            0% { left: -150%; }
+            40% { left: 150%; }
+            100% { left: 150%; }
+        }
+
+        /* Rank Arrows */
+        .rank-up { color: #34d399; font-size: 0.7rem; display: flex; flex-direction: column; align-items: center; font-weight: 800; }
+        .rank-down { color: #f87171; font-size: 0.7rem; display: flex; flex-direction: column; align-items: center; font-weight: 800; }
+        .rank-same { color: #64748b; font-size: 1rem; font-weight: 800; }
+
     </style>
 </head>
 <body class="p-4 md:p-10">
@@ -29,7 +67,7 @@
         <header class="flex flex-col xl:flex-row justify-between items-center mb-10 gap-6">
             <div class="text-center xl:text-left">
                 <h1 class="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">ContentRate <span class="text-white">Manager</span></h1>
-                <p class="text-slate-500 font-medium">Describing content in numbers.</p>
+                <p class="text-slate-500 font-medium">Describing content with numbers.</p>
             </div>
 
             <div class="glass-card px-6 py-3 rounded-2xl flex flex-wrap justify-center items-center gap-6 border border-amber-500/20 shadow-lg shadow-amber-900/10">
@@ -154,8 +192,16 @@
             setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
         }
 
+        // --- DATA PROTECTION INIT ---
         async function init() {
-            const savedWallet = localStorage.getItem('cp_manager_save_v5_safezone'); 
+            // Check for the NEW key logic first
+            let savedWallet = localStorage.getItem('cp_manager_king_v1');
+            
+            // If new key doesn't exist, check for the OLD key (Migration)
+            if (!savedWallet) {
+                savedWallet = localStorage.getItem('cp_manager_save_v5_safezone'); 
+            }
+
             if (savedWallet) {
                 wallet = JSON.parse(savedWallet);
             }
@@ -179,7 +225,6 @@
 
             rows.forEach(row => {
                 if (!row.Name) return;
-                
                 if (!farmersMap[row.Name]) {
                     farmersMap[row.Name] = {
                         id: row.Name.toLowerCase().replace(/\s/g, '-'),
@@ -194,43 +239,89 @@
                 }
             });
 
-            processedFarmers = Object.values(farmersMap).map(f => {
+            // 1. Process Basic Stats
+            let tempFarmers = Object.values(farmersMap).map(f => {
                 f.scores.sort((a, b) => new Date(b.date) - new Date(a.date));
                 const recentScores = f.scores.slice(0, 14);
                 const avg = recentScores.reduce((a, b) => a + b.score, 0) / recentScores.length;
-                const prevAvg = f.scores.slice(1, 15).length > 0 ? f.scores.slice(1, 15).reduce((a, b) => a + b.score, 0) / f.scores.slice(1, 15).length : avg;
-                const currentAvg = parseFloat(avg.toFixed(2));
-                const price = Math.max(5, Math.floor((currentAvg - 6.0) * 40));
-
-                // NEW METRICS FOR COMPARISON
-                const best14 = Math.max(...recentScores.map(s => s.score));
-                const worst14 = Math.min(...recentScores.map(s => s.score));
-                let starCount = 0;
-                f.scores.forEach(s => { if(s.score === dailyBestScores[s.date]) starCount++; });
                 
-                // Rolling Avg History (Last 5 Updates)
+                // Calculate PREVIOUS Average (Rolling) for rank change detection
+                const prevScores = f.scores.slice(1, 15);
+                const prevAvg = prevScores.length > 0 ? prevScores.reduce((a, b) => a + b.score, 0) / prevScores.length : avg;
+                
+                const currentAvg = parseFloat(avg.toFixed(2));
+                const prevAvgFixed = parseFloat(prevAvg.toFixed(2));
+                
+                // Form Points (Last 5 Scores)
+                const last5 = f.scores.slice(0, 5);
+                const last5Avg = last5.reduce((a,b)=>a+b.score,0) / last5.length;
+                let formPoints = 0;
+                last5.forEach(s => {
+                    if (s.score >= 9.0) formPoints += 4;
+                    else if (s.score >= 8.0) formPoints += 2;
+                    else if (s.score >= 7.0) formPoints += 1;
+                    else if (s.score >= 6.5) formPoints += 0;
+                    else if (s.score >= 6.0) formPoints -= 1;
+                    else formPoints -= 2;
+                });
+
+                // Rolling History for Charts
                 let rollingHistory = [];
                 for(let i=0; i<5; i++) {
                     const slice = f.scores.slice(i, i+14);
-                    if(slice.length > 0) {
-                        const ra = slice.reduce((a, b) => a + b.score, 0) / slice.length;
-                        rollingHistory.push(parseFloat(ra.toFixed(2)));
-                    } else {
-                        rollingHistory.push(null);
-                    }
+                    if(slice.length > 0) rollingHistory.push(parseFloat((slice.reduce((a, b) => a + b.score, 0) / slice.length).toFixed(2)));
+                    else rollingHistory.push(null);
                 }
-                // Reverse to have oldest first for chart
-                rollingHistory.reverse();
 
                 return {
                     ...f,
-                    currentAvg, price,
+                    currentAvg, prevAvg: prevAvgFixed, formPoints, last5Avg, 
                     trend: avg > prevAvg ? 'up' : avg < prevAvg ? 'down' : 'equal',
                     grade: calculateGrade(avg),
-                    stats: { best14, worst14, starCount, rollingHistory }
+                    stats: { best14: Math.max(...recentScores.map(s=>s.score)), worst14: Math.min(...recentScores.map(s=>s.score)), rollingHistory },
+                    isKing: false
                 };
-            }).sort((a, b) => b.currentAvg - a.currentAvg);
+            });
 
+            // 2. Determine "The King" (Best Farmer Logic)
+            // Sort by Form Points > Last 5 Avg > Alphabetical
+            const kingSort = [...tempFarmers].sort((a, b) => {
+                if (b.formPoints !== a.formPoints) return b.formPoints - a.formPoints;
+                if (b.last5Avg !== a.last5Avg) return b.last5Avg - a.last5Avg;
+                return a.name.localeCompare(b.name);
+            });
+            // Mark the winner
+            if(kingSort.length > 0) {
+                const kingID = kingSort[0].id;
+                const kingRef = tempFarmers.find(f => f.id === kingID);
+                if(kingRef) kingRef.isKing = true;
+            }
+
+            // 3. Determine Rank Changes
+            tempFarmers.sort((a, b) => b.currentAvg - a.currentAvg);
+            const prevRankList = [...tempFarmers].sort((a, b) => b.prevAvg - a.prevAvg);
+            
+            tempFarmers.forEach((f, index) => {
+                const currentRank = index;
+                const prevRank = prevRankList.findIndex(x => x.id === f.id);
+                f.rankChange = prevRank - currentRank; 
+            });
+
+            // 4. Calculate Prices (STRICT FORMULA, NO FIXING)
+            tempFarmers.forEach(f => {
+                // Strict Formula: (Avg - 6) * 40
+                const basePrice = Math.max(10, Math.floor((f.currentAvg - 6.0) * 40));
+                
+                // King Multiplier only (20% Bonus)
+                let multiplier = 1.0;
+                if (f.isKing) multiplier = 1.2; 
+
+                f.price = Math.floor(basePrice * multiplier);
+            });
+
+            // REMOVED: The price correction loop. Prices are now purely formulaic.
+
+            processedFarmers = tempFarmers;
             updateHUD();
             document.getElementById('loading-state').classList.add('hidden');
             document.getElementById('view-container').classList.remove('hidden');
@@ -252,12 +343,13 @@
             let assetValue = 0;
             wallet.roster.forEach(id => { const f = processedFarmers.find(x => x.id === id); if (f) assetValue += f.price; });
             document.getElementById('netWorth').innerText = (wallet.balance + assetValue).toFixed(0);
-            localStorage.setItem('cp_manager_save_v5_safezone', JSON.stringify(wallet));
+            localStorage.setItem('cp_manager_king_v1', JSON.stringify(wallet));
         }
 
         function resetAccount() {
             if(confirm("Are you sure? This will wipe your team and reset CP to 100.")) {
-                localStorage.removeItem('cp_manager_save_v5_safezone');
+                localStorage.removeItem('cp_manager_king_v1');
+                localStorage.removeItem('cp_manager_save_v5_safezone'); // clear old key too
                 location.reload();
             }
         }
@@ -298,20 +390,24 @@
             updateHUD();
             if(document.getElementById('searchInput')) renderLeaderboard();
             const profileHeader = document.querySelector('#view-container h2');
-            if(profileHeader && profileHeader.innerText === farmer.name) renderProfile(farmerId);
+            if(profileHeader && profileHeader.innerText.includes(farmer.name)) renderProfile(farmerId);
         }
 
         function collectRewards() {
             const now = Date.now();
             if (now - (wallet.lastCollect || 0) < COOLDOWN_MS) return showToast("Already played today.", "error");
             if (wallet.roster.length === 0) return showToast("Recruit players first!", "neutral");
+            
             let totalChange = 0;
             wallet.roster.forEach(id => {
                 const f = processedFarmers.find(x => x.id === id);
                 if (f && f.scores.length > 0) {
                     const score = f.scores[0].score;
-                    if (score >= 7.0) totalChange += (score - 7.0) * 10;
-                    else if (score < 6.5) totalChange += (score - 6.5) * 10;
+                    // TURBO VOLATILITY LOGIC
+                    if (score >= 9.0) totalChange += 40;
+                    else if (score >= 8.0) totalChange += 20;
+                    else if (score >= 7.0) totalChange += (score - 7.0) * 15;
+                    else if (score < 6.5) totalChange -= 15;
                 }
             });
             wallet.balance += totalChange;
@@ -319,7 +415,15 @@
             wallet.lastCollect = now;
             updateHUD();
             startCooldownTimer();
-            showToast(`${totalChange >= 0 ? '🤑' : '📉'} Matchday: ${totalChange >= 0 ? '+' : ''}${totalChange.toFixed(1)} CP`, totalChange >= 0 ? 'gold' : 'error');
+            const emoji = totalChange >= 50 ? '🚀' : (totalChange >= 0 ? '🤑' : '📉');
+            showToast(`${emoji} Matchday: ${totalChange >= 0 ? '+' : ''}${totalChange.toFixed(1)} CP`, totalChange >= 0 ? 'gold' : 'error');
+        }
+
+        // Helper for Arrows
+        function getRankArrow(change) {
+            if (change > 0) return `<div class="rank-up"><i data-lucide="chevron-up" class="w-3 h-3"></i>+${change}</div>`;
+            if (change < 0) return `<div class="rank-down"><i data-lucide="chevron-down" class="w-3 h-3"></i>${change}</div>`;
+            return `<div class="rank-same">-</div>`;
         }
 
         function renderLeaderboard() {
@@ -343,10 +447,17 @@
                         const isOwned = wallet.roster.includes(f.id);
                         const isBestOfDay = latest && latest.score === dailyBestScores[latest.date];
                         const last5 = f.scores.slice(0, 5).reverse();
+                        
+                        // Signature Card Logic
+                        const cardClass = f.isKing ? 'glass-card signature-card' : 'glass-card';
 
                         return `
-                        <div class="glass-card grid grid-cols-12 items-center p-5 rounded-2xl cursor-pointer hover:bg-slate-800/50 group" onclick="renderProfile('${f.id}')">
-                            <div class="col-span-2 md:col-span-1 font-black text-slate-500 text-lg italic">#${i + 1}</div>
+                        <div class="${cardClass} grid grid-cols-12 items-center p-5 rounded-2xl cursor-pointer hover:bg-slate-800/50 group" onclick="renderProfile('${f.id}')">
+                            <div class="col-span-2 md:col-span-1 font-black text-slate-500 text-lg italic flex flex-col items-center justify-center">
+                                #${i + 1}
+                                ${getRankArrow(f.rankChange)}
+                            </div>
+                            
                             <div class="col-span-6 md:col-span-4 flex items-center gap-4">
                                 <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center font-bold text-indigo-400 border border-slate-700 text-xl relative">
                                     ${f.name[0]}
@@ -356,10 +467,12 @@
                                     <div class="font-bold text-white text-lg flex items-center gap-2">
                                         ${f.name}
                                         ${isBestOfDay ? '<i data-lucide="star" class="w-4 h-4 text-yellow-500 fill-yellow-500"></i>' : ''}
+                                        ${f.isKing ? '<i data-lucide="crown" class="w-4 h-4 text-amber-400 fill-amber-400"></i>' : ''}
                                     </div>
                                     <div class="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Contributor</div>
                                 </div>
                             </div>
+                            
                             <div class="col-span-4 md:col-span-2 flex flex-col justify-center items-end md:items-center">
                                 <div class="flex items-center gap-2">
                                     <span class="text-xl font-black ${getTailwindColor(f.currentAvg)}">${f.currentAvg}</span>
@@ -369,13 +482,16 @@
                                     ${last5.map(s => `<div class="w-2 h-2 rounded-sm ${getScoreBgColor(s.score)}" title="${s.score} (${s.date})"></div>`).join('')}
                                 </div>
                             </div>
+
                             <div class="hidden md:flex col-span-2 justify-center items-center gap-1">
                                 <span class="text-lg font-black text-amber-400">${f.price}</span>
                                 <span class="text-xs text-amber-500/50 font-bold">CP</span>
                             </div>
+
                             <div class="hidden md:flex col-span-2 justify-center">
                                 <span class="text-lg font-black ${getTailwindColor(latestScore)} bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700/50">${latestScore.toFixed(1)}</span>
                             </div>
+
                             <div class="hidden md:flex col-span-1 justify-end gap-2">
                                 <button onclick="event.stopPropagation(); addToCompare('${f.id}')" class="p-2 rounded-lg transition hover:bg-slate-700 text-slate-500 hover:text-indigo-400" title="Compare">
                                     <i data-lucide="${compareSelection.includes(f.id) ? 'check-circle' : 'swords'}" class="w-5 h-5"></i>
@@ -396,6 +512,7 @@
             const container = document.getElementById('view-container');
             const isOwned = wallet.roster.includes(f.id);
             const isComparing = compareSelection.includes(f.id);
+            const cardClass = f.isKing ? 'glass-card signature-card' : 'glass-card';
             
             container.innerHTML = `
                 <div class="animate-slide-up pb-10">
@@ -404,12 +521,15 @@
                     </button>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div class="lg:col-span-1 space-y-6">
-                            <div class="glass-card p-8 rounded-[2rem] text-center border-b-4 ${isOwned ? 'border-emerald-500' : 'border-indigo-500'}">
+                            <div class="${cardClass} p-8 rounded-[2rem] text-center border-b-4 ${isOwned ? 'border-emerald-500' : 'border-indigo-500'}">
                                 <div class="w-24 h-24 rounded-3xl bg-indigo-600 mx-auto mb-6 flex items-center justify-center text-4xl font-black shadow-2xl shadow-indigo-500/40 relative">
                                     ${f.name[0]}
-                                    ${isOwned ? `<div class="absolute -top-2 -right-2 bg-emerald-500 text-white px-3 py-1 text-xs font-bold rounded-full border-4 border-slate-900 shadow-sm">RECRUITED</div>` : ''}
+                                    ${isOwned ? `<div class="absolute -top-2 -right-2 bg-emerald-500 text-white px-3 py-1 text-xs font-bold rounded-full border-4 border-slate-900 shadow-sm">OWNED</div>` : ''}
                                 </div>
-                                <h2 class="text-3xl font-black mb-1">${f.name}</h2>
+                                <h2 class="text-3xl font-black mb-1 flex items-center justify-center gap-2">
+                                    ${f.name}
+                                    ${f.isKing ? '<i data-lucide="crown" class="w-6 h-6 text-amber-400 fill-amber-400"></i>' : ''}
+                                </h2>
                                 <p class="text-indigo-400 font-bold mb-6 uppercase tracking-widest text-xs">${f.grade.label}</p>
                                 <div class="grid grid-cols-2 gap-3 mb-6">
                                     <div class="bg-slate-900/50 p-3 rounded-2xl border border-slate-800">
@@ -421,7 +541,7 @@
                                         <span class="text-xl font-black ${getTailwindColor(f.currentAvg)}">${f.currentAvg}</span>
                                     </div>
                                 </div>
-                                <div class="text-[10px] text-slate-500 mb-4 bg-slate-900/50 p-2 rounded-lg">Payout: &gt;7.0 Gain, &lt;6.5 Loss, 6.5-6.9 Safe</div>
+                                <div class="text-[10px] text-slate-500 mb-4 bg-slate-900/50 p-2 rounded-lg">Payout: >9.0 Jackpot, >8.0 Profit, &lt;6.5 Penalty</div>
                                 <div class="flex gap-3">
                                     <button onclick="addToCompare('${f.id}')" class="flex-1 py-4 rounded-xl font-black uppercase tracking-widest text-xs transition shadow-lg flex items-center justify-center gap-2 ${isComparing ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">
                                         <i data-lucide="${isComparing ? 'check' : 'swords'}" class="w-4 h-4"></i> ${isComparing ? 'Selected' : 'Compare'}
@@ -455,7 +575,7 @@
             document.getElementById('compareBtn').innerHTML = `<i data-lucide="swords" class="w-4 h-4"></i> Compare (${compareSelection.length})`;
             const profileHeader = document.querySelector('#view-container h2');
             const f = processedFarmers.find(x => x.id === id);
-            if(profileHeader && profileHeader.innerText === f.name) renderProfile(id);
+            if(profileHeader && profileHeader.innerText.includes(f.name)) renderProfile(id);
             else renderLeaderboard();
         }
 
@@ -471,77 +591,39 @@
             const f1 = processedFarmers.find(x => x.id === compareSelection[0]);
             const f2 = processedFarmers.find(x => x.id === compareSelection[1]);
 
-            // Calculate Profitability (Risk Factor)
-            const getProfitRate = (f) => {
-                const recent = f.scores.slice(0, 14);
-                const wins = recent.filter(s => s.score >= 7.0).length;
-                return Math.round((wins / recent.length) * 100);
+            // Rolling Avg History (Last 5 Updates)
+            const getRolling = (f) => {
+                // Should return f.stats.rollingHistory which we already calculated in init
+                return f.stats.rollingHistory.slice().reverse(); 
             };
 
             content.innerHTML = `
                 <div class="grid grid-cols-2 gap-8 mb-8">
                     <div class="glass-card p-6 rounded-2xl border-t-4 border-indigo-500">
-                        <h3 class="text-2xl font-black text-white mb-1">${f1.name}</h3>
+                        <h3 class="text-2xl font-black text-white mb-1 flex items-center gap-2">${f1.name} ${f1.isKing ? '<i data-lucide="crown" class="w-5 h-5 text-amber-400 fill-amber-400"></i>' : ''}</h3>
                         <p class="text-indigo-400 font-bold text-xs uppercase mb-6">${f1.grade.label}</p>
                         <div class="space-y-3">
                             <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Best (14d)</span><span class="font-black text-emerald-400">${f1.stats.best14}</span></div>
-                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Worst (14d)</span><span class="font-black text-red-400">${f1.stats.worst14}</span></div>
                             <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Stars</span><span class="font-black text-yellow-400 flex items-center gap-1">${f1.stats.starCount} <i data-lucide="star" class="w-3 h-3 fill-yellow-400"></i></span></div>
-                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Profit Rate</span><span class="font-black text-white">${getProfitRate(f1)}%</span></div>
                         </div>
                     </div>
                     <div class="glass-card p-6 rounded-2xl border-t-4 border-pink-500">
-                        <h3 class="text-2xl font-black text-white mb-1">${f2.name}</h3>
+                        <h3 class="text-2xl font-black text-white mb-1 flex items-center gap-2">${f2.name} ${f2.isKing ? '<i data-lucide="crown" class="w-5 h-5 text-amber-400 fill-amber-400"></i>' : ''}</h3>
                         <p class="text-pink-400 font-bold text-xs uppercase mb-6">${f2.grade.label}</p>
                         <div class="space-y-3">
                             <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Best (14d)</span><span class="font-black text-emerald-400">${f2.stats.best14}</span></div>
-                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Worst (14d)</span><span class="font-black text-red-400">${f2.stats.worst14}</span></div>
                             <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Stars</span><span class="font-black text-yellow-400 flex items-center gap-1">${f2.stats.starCount} <i data-lucide="star" class="w-3 h-3 fill-yellow-400"></i></span></div>
-                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Profit Rate</span><span class="font-black text-white">${getProfitRate(f2)}%</span></div>
                         </div>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="glass-card p-6 rounded-2xl">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Attribute DNA</h4>
-                        <canvas id="compareRadarChart"></canvas>
-                    </div>
-                    <div class="glass-card p-6 rounded-2xl">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Momentum (Avg Trend)</h4>
-                        <canvas id="compareLineChart"></canvas>
-                    </div>
+                    <div class="glass-card p-6 rounded-2xl"><h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Attribute DNA</h4><canvas id="compareRadarChart"></canvas></div>
+                    <div class="glass-card p-6 rounded-2xl"><h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Momentum</h4><canvas id="compareLineChart"></canvas></div>
                 </div>
             `;
-            
             lucide.createIcons();
-
-            new Chart(document.getElementById('compareRadarChart'), {
-                type: 'radar',
-                data: {
-                    labels: ['Creativity', 'Consistency', 'Attendance', 'Presence', 'Quality'],
-                    datasets: [
-                        { label: f1.name, data: Object.values(f1.attributes), borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.2)' },
-                        { label: f2.name, data: Object.values(f2.attributes), borderColor: '#ec4899', backgroundColor: 'rgba(236, 72, 153, 0.2)' }
-                    ]
-                },
-                options: { scales: { r: { min: 0, max: 100, ticks: { display: false } } }, plugins: { legend: { labels: { color: '#fff' } } } }
-            });
-
-            new Chart(document.getElementById('compareLineChart'), {
-                type: 'line',
-                data: {
-                    labels: ['5 Days Ago', '4 Days Ago', '3 Days Ago', 'Yesterday', 'Today'],
-                    datasets: [
-                        { label: f1.name, data: f1.stats.rollingHistory, borderColor: '#6366f1', tension: 0.4 },
-                        { label: f2.name, data: f2.stats.rollingHistory, borderColor: '#ec4899', tension: 0.4 }
-                    ]
-                },
-                options: { 
-                    scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } },
-                    plugins: { legend: { labels: { color: '#fff' } } }
-                }
-            });
+            new Chart(document.getElementById('compareRadarChart'), { type: 'radar', data: { labels: ['Creativity', 'Consistency', 'Attendance', 'Presence', 'Quality'], datasets: [{ label: f1.name, data: Object.values(f1.attributes), borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.2)' }, { label: f2.name, data: Object.values(f2.attributes), borderColor: '#ec4899', backgroundColor: 'rgba(236, 72, 153, 0.2)' }] }, options: { scales: { r: { min: 0, max: 100, ticks: { display: false } } }, plugins: { legend: { labels: { color: '#fff' } } } } });
+            new Chart(document.getElementById('compareLineChart'), { type: 'line', data: { labels: ['-4d', '-3d', '-2d', 'Yesterday', 'Today'], datasets: [{ label: f1.name, data: f1.stats.rollingHistory.slice().reverse(), borderColor: '#6366f1', tension: 0.4 }, { label: f2.name, data: f2.stats.rollingHistory.slice().reverse(), borderColor: '#ec4899', tension: 0.4 }] }, options: { scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } }, plugins: { legend: { labels: { color: '#fff' } } } } });
         }
 
         // --- CHARTING & HELPERS ---
