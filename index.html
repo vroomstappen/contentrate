@@ -67,7 +67,7 @@
         <header class="flex flex-col xl:flex-row justify-between items-center mb-10 gap-6">
             <div class="text-center xl:text-left">
                 <h1 class="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">ContentRate <span class="text-white">Manager</span></h1>
-                <p class="text-slate-500 font-medium">Describing content with numbers.</p>
+                <p class="text-slate-500 font-medium">Describing content in numbers.</p>
             </div>
 
             <div class="glass-card px-6 py-3 rounded-2xl flex flex-wrap justify-center items-center gap-6 border border-amber-500/20 shadow-lg shadow-amber-900/10">
@@ -265,6 +265,19 @@
                     else formPoints -= 2;
                 });
 
+                // Calculate Star Count
+                let starCount = 0;
+                f.scores.forEach(s => {
+                    if(dailyBestScores[s.date] && s.score >= dailyBestScores[s.date]) {
+                        starCount++;
+                    }
+                });
+
+                // Calculate Profit Rate (Percentage of games with profit > 0)
+                // Profit threshold is 7.0 score based on standard rules
+                const profitGames = recentScores.filter(s => s.score >= 7.0).length;
+                const profitRate = Math.round((profitGames / recentScores.length) * 100);
+
                 // Rolling History for Charts
                 let rollingHistory = [];
                 for(let i=0; i<5; i++) {
@@ -278,19 +291,23 @@
                     currentAvg, prevAvg: prevAvgFixed, formPoints, last5Avg, 
                     trend: avg > prevAvg ? 'up' : avg < prevAvg ? 'down' : 'equal',
                     grade: calculateGrade(avg),
-                    stats: { best14: Math.max(...recentScores.map(s=>s.score)), worst14: Math.min(...recentScores.map(s=>s.score)), rollingHistory },
+                    stats: { 
+                        best14: Math.max(...recentScores.map(s=>s.score)), 
+                        worst14: Math.min(...recentScores.map(s=>s.score)), 
+                        rollingHistory,
+                        starCount,
+                        profitRate
+                    },
                     isKing: false
                 };
             });
 
             // 2. Determine "The King" (Best Farmer Logic)
-            // Sort by Form Points > Last 5 Avg > Alphabetical
             const kingSort = [...tempFarmers].sort((a, b) => {
                 if (b.formPoints !== a.formPoints) return b.formPoints - a.formPoints;
                 if (b.last5Avg !== a.last5Avg) return b.last5Avg - a.last5Avg;
                 return a.name.localeCompare(b.name);
             });
-            // Mark the winner
             if(kingSort.length > 0) {
                 const kingID = kingSort[0].id;
                 const kingRef = tempFarmers.find(f => f.id === kingID);
@@ -309,17 +326,11 @@
 
             // 4. Calculate Prices (STRICT FORMULA, NO FIXING)
             tempFarmers.forEach(f => {
-                // Strict Formula: (Avg - 6) * 40
                 const basePrice = Math.max(10, Math.floor((f.currentAvg - 6.0) * 40));
-                
-                // King Multiplier only (20% Bonus)
                 let multiplier = 1.0;
                 if (f.isKing) multiplier = 1.2; 
-
                 f.price = Math.floor(basePrice * multiplier);
             });
-
-            // REMOVED: The price correction loop. Prices are now purely formulaic.
 
             processedFarmers = tempFarmers;
             updateHUD();
@@ -349,7 +360,7 @@
         function resetAccount() {
             if(confirm("Are you sure? This will wipe your team and reset CP to 100.")) {
                 localStorage.removeItem('cp_manager_king_v1');
-                localStorage.removeItem('cp_manager_save_v5_safezone'); // clear old key too
+                localStorage.removeItem('cp_manager_save_v5_safezone'); 
                 location.reload();
             }
         }
@@ -403,7 +414,6 @@
                 const f = processedFarmers.find(x => x.id === id);
                 if (f && f.scores.length > 0) {
                     const score = f.scores[0].score;
-                    // TURBO VOLATILITY LOGIC
                     if (score >= 9.0) totalChange += 40;
                     else if (score >= 8.0) totalChange += 20;
                     else if (score >= 7.0) totalChange += (score - 7.0) * 15;
@@ -419,7 +429,6 @@
             showToast(`${emoji} Matchday: ${totalChange >= 0 ? '+' : ''}${totalChange.toFixed(1)} CP`, totalChange >= 0 ? 'gold' : 'error');
         }
 
-        // Helper for Arrows
         function getRankArrow(change) {
             if (change > 0) return `<div class="rank-up"><i data-lucide="chevron-up" class="w-3 h-3"></i>+${change}</div>`;
             if (change < 0) return `<div class="rank-down"><i data-lucide="chevron-down" class="w-3 h-3"></i>${change}</div>`;
@@ -447,8 +456,6 @@
                         const isOwned = wallet.roster.includes(f.id);
                         const isBestOfDay = latest && latest.score === dailyBestScores[latest.date];
                         const last5 = f.scores.slice(0, 5).reverse();
-                        
-                        // Signature Card Logic
                         const cardClass = f.isKing ? 'glass-card signature-card' : 'glass-card';
 
                         return `
@@ -593,7 +600,6 @@
 
             // Rolling Avg History (Last 5 Updates)
             const getRolling = (f) => {
-                // Should return f.stats.rollingHistory which we already calculated in init
                 return f.stats.rollingHistory.slice().reverse(); 
             };
 
@@ -604,7 +610,10 @@
                         <p class="text-indigo-400 font-bold text-xs uppercase mb-6">${f1.grade.label}</p>
                         <div class="space-y-3">
                             <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Best (14d)</span><span class="font-black text-emerald-400">${f1.stats.best14}</span></div>
+                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Worst (14d)</span><span class="font-black text-red-400">${f1.stats.worst14}</span></div>
                             <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Stars</span><span class="font-black text-yellow-400 flex items-center gap-1">${f1.stats.starCount} <i data-lucide="star" class="w-3 h-3 fill-yellow-400"></i></span></div>
+                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Profit Rate</span><span class="font-black ${f1.stats.profitRate >= 50 ? 'text-emerald-400' : 'text-red-400'}">${f1.stats.profitRate}%</span></div>
+                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Form Rating</span><span class="font-black ${f1.formPoints >= 0 ? 'text-amber-400' : 'text-slate-400'}">${f1.formPoints > 0 ? '+' : ''}${f1.formPoints}</span></div>
                         </div>
                     </div>
                     <div class="glass-card p-6 rounded-2xl border-t-4 border-pink-500">
@@ -612,7 +621,10 @@
                         <p class="text-pink-400 font-bold text-xs uppercase mb-6">${f2.grade.label}</p>
                         <div class="space-y-3">
                             <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Best (14d)</span><span class="font-black text-emerald-400">${f2.stats.best14}</span></div>
+                             <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Worst (14d)</span><span class="font-black text-red-400">${f2.stats.worst14}</span></div>
                             <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Stars</span><span class="font-black text-yellow-400 flex items-center gap-1">${f2.stats.starCount} <i data-lucide="star" class="w-3 h-3 fill-yellow-400"></i></span></div>
+                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Profit Rate</span><span class="font-black ${f2.stats.profitRate >= 50 ? 'text-emerald-400' : 'text-red-400'}">${f2.stats.profitRate}%</span></div>
+                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Form Rating</span><span class="font-black ${f2.formPoints >= 0 ? 'text-amber-400' : 'text-slate-400'}">${f2.formPoints > 0 ? '+' : ''}${f2.formPoints}</span></div>
                         </div>
                     </div>
                 </div>
