@@ -1024,47 +1024,61 @@
             renderAccountPanel();
         }
 
+        // Paste your Google Apps Script Web App URL here after deploying
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzyhtAE6AuVTzfNmt9ehnLzr7CDxd4blKSBAXUJm3xCCujVUPfmGbhrV4_XnDjqZdktgw/exec';
+
         async function publishToLeaderboard() {
             if (!accountUser) return showToast('Create an account first', 'error');
+            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+                return showToast('Paste your Apps Script URL into index.html first!', 'error');
+            }
             const nw = parseFloat(document.getElementById('netWorth').innerText) || 0;
             const rosterNames = wallet.roster.map(id => {
                 const f = processedFarmers.find(x => x.id === id);
                 return f ? f.name : id;
             });
-            const entry = {
-                username: accountUser.username,
-                netWorth: nw,
-                roster: rosterNames,
-                timestamp: Date.now()
-            };
             try {
-                await window.storage.set(accountUser.userId, JSON.stringify(entry), true);
-                showToast('Leaderboard updated!', 'success');
+                const res = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        userId: accountUser.userId,
+                        username: accountUser.username,
+                        netWorth: nw,
+                        roster: rosterNames
+                    })
+                });
+                const json = await res.json();
+                if (!json.ok) throw new Error(json.error || 'Unknown error');
+                showToast('Leaderboard updated! 🏆', 'success');
                 loadGlobalLeaderboard();
             } catch (e) {
-                showToast('Could not publish. Try again.', 'error');
+                console.error('Publish error:', e);
+                showToast('Could not publish. Check your Apps Script URL.', 'error');
             }
         }
 
         async function loadGlobalLeaderboard() {
             const listEl = document.getElementById('globalLbList');
             listEl.innerHTML = `<div class="p-8 text-center"><div class="loading-spinner mx-auto mb-3"></div><p class="text-slate-500 text-sm font-bold animate-pulse">FETCHING MANAGERS...</p></div>`;
+
+            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+                listEl.innerHTML = `<div class="p-8 text-center text-slate-500 font-bold text-sm">⚙️ Paste your Apps Script URL into index.html to enable the leaderboard.</div>`;
+                return;
+            }
+
             try {
-                const result = await window.storage.list('user_', true);
-                if (!result || !result.keys || result.keys.length === 0) {
+                const res = await fetch(APPS_SCRIPT_URL);
+                const json = await res.json();
+                if (!json.ok) throw new Error('Bad response');
+
+                const entries = (json.entries || []).sort((a, b) => b.netWorth - a.netWorth);
+
+                document.getElementById('lbLastUpdated').innerText = `${entries.length} manager${entries.length !== 1 ? 's' : ''} registered`;
+
+                if (entries.length === 0) {
                     listEl.innerHTML = `<div class="p-8 text-center text-slate-500 font-bold text-sm">No managers yet. Be the first to publish your score!</div>`;
                     return;
                 }
-                const entries = [];
-                for (const key of result.keys) {
-                    try {
-                        const r = await window.storage.get(key, true);
-                        if (r) entries.push({ key, ...JSON.parse(r.value) });
-                    } catch(e) {}
-                }
-                entries.sort((a, b) => b.netWorth - a.netWorth);
-
-                document.getElementById('lbLastUpdated').innerText = `${entries.length} manager${entries.length !== 1 ? 's' : ''} registered`;
 
                 listEl.innerHTML = entries.map((e, i) => {
                     const isMe = accountUser && e.username === accountUser.username;
@@ -1091,7 +1105,8 @@
                 }).join('');
                 lucide.createIcons();
             } catch(e) {
-                listEl.innerHTML = `<div class="p-8 text-center text-slate-500 font-bold text-sm">Failed to load leaderboard.</div>`;
+                console.error('Leaderboard load error:', e);
+                listEl.innerHTML = `<div class="p-8 text-center text-slate-500 font-bold text-sm">Failed to load leaderboard. Check your Apps Script URL.</div>`;
             }
         }
 
