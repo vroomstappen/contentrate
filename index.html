@@ -59,6 +59,36 @@
         .rank-down { color: #f87171; font-size: 0.7rem; display: flex; flex-direction: column; align-items: center; font-weight: 800; }
         .rank-same { color: #64748b; font-size: 1rem; font-weight: 800; }
 
+        /* --- TUTORIAL OVERLAY --- */
+        #tutorialOverlay {
+            position: fixed; inset: 0; background: rgba(2, 6, 23, 0.92);
+            backdrop-filter: blur(8px); z-index: 100; align-items: center; justify-content: center;
+        }
+        #tutorialOverlay:not(.hidden) { display: flex; }
+        .tutorial-card { animation: slideUp 0.5s ease-out forwards; }
+        .tutorial-step { display: none; }
+        .tutorial-step.active { display: block; }
+        .tutorial-dot { width: 8px; height: 8px; border-radius: 50%; background: #334155; transition: all 0.3s; }
+        .tutorial-dot.active { background: #6366f1; width: 20px; border-radius: 4px; }
+
+        /* --- ACCOUNT / LEADERBOARD MODAL --- */
+        #accountModal { position: fixed; inset: 0; background: rgba(2,6,23,0.95); backdrop-filter: blur(16px); z-index: 80; }
+        .lb-row { transition: all 0.2s; }
+        .lb-row:hover { background: rgba(99,102,241,0.08); }
+        .lb-gold { border-left: 3px solid #f59e0b; }
+        .lb-silver { border-left: 3px solid #94a3b8; }
+        .lb-bronze { border-left: 3px solid #b45309; }
+
+        /* --- NET WORTH BADGE --- */
+        @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); } 50% { box-shadow: 0 0 0 8px rgba(99,102,241,0); } }
+        .nw-pulse { animation: pulse-glow 2s infinite; }
+
+        /* --- STAT BARS --- */
+        .stat-bar-track { height: 6px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; }
+        .stat-bar-fill { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+
+        /* Compare win highlight */
+        .compare-win { background: rgba(99,102,241,0.15) !important; border-color: rgba(99,102,241,0.4) !important; }
     </style>
 </head>
 <body class="p-4 md:p-10">
@@ -100,6 +130,9 @@
                     <button onclick="resetAccount()" class="text-slate-600 hover:text-red-400 p-2 transition" title="Reset Career">
                         <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                     </button>
+                    <button onclick="openTutorial()" class="text-slate-600 hover:text-yellow-400 p-2 transition" title="Tutorial">
+                        <i data-lucide="lightbulb" class="w-4 h-4"></i>
+                    </button>
                 </div>
             </div>
 
@@ -107,6 +140,10 @@
                 <div class="relative hidden md:block">
                     <input type="text" id="searchInput" oninput="renderLeaderboard()" placeholder="Scout talent..." class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 transition w-48 text-white">
                 </div>
+                <button onclick="openAccountModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 transition flex items-center gap-2 text-sm font-bold border border-slate-700 hover:border-indigo-500/50">
+                    <i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i>
+                    <span class="hidden sm:inline text-slate-300">Leaderboard</span>
+                </button>
                 <button onclick="toggleCompareMode()" id="compareBtn" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition flex items-center gap-2 text-sm font-bold shadow-lg shadow-indigo-500/20">
                     <i data-lucide="swords" class="w-4 h-4"></i> Compare
                 </button>
@@ -119,6 +156,99 @@
         </div>
 
         <main id="view-container" class="hidden"></main>
+    </div>
+
+    <!-- ===== TUTORIAL OVERLAY ===== -->
+    <div id="tutorialOverlay" class="hidden">
+        <div class="tutorial-card bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg mx-4 p-8 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <span class="text-[10px] font-black uppercase tracking-widest text-indigo-400">ContentRate Manager</span>
+                <button onclick="closeTutorial()" class="text-slate-500 hover:text-white transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <!-- Steps -->
+            <div id="tutStep0" class="tutorial-step active">
+                <div class="text-5xl mb-4">👋</div>
+                <h2 class="text-2xl font-black text-white mb-3">Welcome to ContentRate Manager</h2>
+                <p class="text-slate-400 leading-relaxed">This is a fantasy-style investing game built around real content creator scores. You'll build a roster, run daily matches, and grow your CP (ContentPoints) balance.</p>
+            </div>
+            <div id="tutStep1" class="tutorial-step">
+                <div class="text-5xl mb-4">📊</div>
+                <h2 class="text-2xl font-black text-white mb-3">The Leaderboard</h2>
+                <p class="text-slate-400 leading-relaxed">Browse all creators ranked by their 14-day average score. Each card shows their current form, trend, and recruitment cost. Click a card to see their full profile and match history.</p>
+            </div>
+            <div id="tutStep2" class="tutorial-step">
+                <div class="text-5xl mb-4">⭐</div>
+                <h2 class="text-2xl font-black text-white mb-3">What's the Star?</h2>
+                <p class="text-slate-400 leading-relaxed">A <span class="text-yellow-400 font-bold">★ gold star</span> means that creator had the highest score out of everyone on that particular day. It's a daily "best performer" badge — a creator can earn multiple stars across different days.</p>
+            </div>
+            <div id="tutStep3" class="tutorial-step">
+                <div class="text-5xl mb-4">👑</div>
+                <h2 class="text-2xl font-black text-white mb-3">What's the Crown?</h2>
+                <p class="text-slate-400 leading-relaxed">The <span class="text-amber-400 font-bold">👑 crown</span> marks the current <strong class="text-white">King</strong> — whoever has the best form right now based on their last 5 scores. Only one creator holds the crown at a time, and it changes as scores update.</p>
+            </div>
+            <div id="tutStep4" class="tutorial-step">
+                <div class="text-5xl mb-4">🔢</div>
+                <h2 class="text-2xl font-black text-white mb-3">Form Points Explained</h2>
+                <p class="text-slate-400 leading-relaxed mb-3">Form Points are calculated from a creator's last 5 scores using their colour band:</p>
+                <div class="grid grid-cols-2 gap-1.5 text-xs font-bold">
+                    <div class="flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 rounded-lg px-3 py-1.5"><span class="text-purple-400">Purple (≥9.0)</span><span class="ml-auto text-white">+4</span></div>
+                    <div class="flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 rounded-lg px-3 py-1.5"><span class="text-blue-400">Blue (8.0–8.99)</span><span class="ml-auto text-white">+2</span></div>
+                    <div class="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-1.5"><span class="text-green-400">Green (7.0–7.99)</span><span class="ml-auto text-white">+1</span></div>
+                    <div class="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-1.5"><span class="text-yellow-400">Yellow (6.5–6.99)</span><span class="ml-auto text-white">0</span></div>
+                    <div class="flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 rounded-lg px-3 py-1.5"><span class="text-orange-400">Orange (6.0–6.49)</span><span class="ml-auto text-white">−1</span></div>
+                    <div class="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-1.5"><span class="text-red-400">Red (&lt;6.0)</span><span class="ml-auto text-white">−2</span></div>
+                </div>
+            </div>
+            <div id="tutStep5" class="tutorial-step">
+                <div class="text-5xl mb-4">🤝</div>
+                <h2 class="text-2xl font-black text-white mb-3">Recruit Your Roster</h2>
+                <p class="text-slate-400 leading-relaxed">Spend CP to recruit creators (up to 4 slots). Higher-rated creators cost more but earn bigger rewards. You can release them anytime to recoup their value.</p>
+            </div>
+            <div id="tutStep6" class="tutorial-step">
+                <div class="text-5xl mb-4">🏆</div>
+                <h2 class="text-2xl font-black text-white mb-3">Run Daily Matches</h2>
+                <p class="text-slate-400 leading-relaxed">Hit <strong class="text-amber-400">Run Daily Match</strong> once per day. Your creators' latest scores determine your payout. A score ≥9.0 is a jackpot, ≥8.0 earns profit, and &lt;6.5 is a penalty.</p>
+            </div>
+            <div id="tutStep7" class="tutorial-step">
+                <div class="text-5xl mb-4">🥇</div>
+                <h2 class="text-2xl font-black text-white mb-3">Global Leaderboard & Compare</h2>
+                <p class="text-slate-400 leading-relaxed">Create an account to appear on the <strong class="text-amber-400">global leaderboard</strong> — your net worth is ranked against all other managers and others can see your roster. Use <strong class="text-indigo-400">Compare</strong> for a deep head-to-head breakdown of any two creators.</p>
+            </div>
+
+            <!-- Nav -->
+            <div class="flex items-center justify-between mt-8">
+                <div class="flex gap-2" id="tutDots"></div>
+                <div class="flex gap-3">
+                    <button onclick="tutPrev()" id="tutPrevBtn" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 text-sm font-bold transition hidden">Back</button>
+                    <button onclick="tutNext()" id="tutNextBtn" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition">Next →</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ACCOUNT / GLOBAL LEADERBOARD MODAL ===== -->
+    <div id="accountModal" class="hidden flex flex-col">
+        <div class="max-w-4xl w-full mx-auto p-4 md:p-8 flex flex-col h-full overflow-y-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-black text-white flex items-center gap-3"><i data-lucide="trophy" class="w-6 h-6 text-amber-400"></i> Global Manager Leaderboard</h2>
+                <button onclick="closeAccountModal()" class="p-2 hover:bg-slate-800 rounded-full transition text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <!-- Auth / Profile panel -->
+            <div id="accountPanel" class="glass-card p-6 rounded-2xl mb-6"></div>
+
+            <!-- Leaderboard table -->
+            <div class="glass-card rounded-2xl overflow-hidden">
+                <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+                    <span class="text-xs font-black uppercase tracking-widest text-slate-400">All Managers</span>
+                    <span id="lbLastUpdated" class="text-[10px] text-slate-600"></span>
+                </div>
+                <div id="globalLbList" class="divide-y divide-slate-800/60 max-h-[50vh] overflow-y-auto custom-scroll">
+                    <div class="p-8 text-center text-slate-500 font-bold text-sm">Loading leaderboard...</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="compareModal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 hidden flex items-center justify-center p-4">
@@ -194,6 +324,13 @@
 
         // --- DATA PROTECTION INIT ---
         async function init() {
+            loadAccountUser();
+
+            // Show tutorial on first ever visit
+            if (!localStorage.getItem('cr_tutorial_done')) {
+                openTutorial();
+            }
+
             // Check for the NEW key logic first
             let savedWallet = localStorage.getItem('cp_manager_king_v1');
             
@@ -252,17 +389,19 @@
                 const currentAvg = parseFloat(avg.toFixed(2));
                 const prevAvgFixed = parseFloat(prevAvg.toFixed(2));
                 
-                // Form Points (Last 5 Scores)
+                // Form Points (Last 5 Scores — based on score colour bands)
+                // Purple ≥9.0: +4 | Blue 8.0–8.99: +2 | Green 7.0–7.99: +1
+                // Yellow 6.5–6.99: 0 | Orange 6.0–6.49: -1 | Red <6.0: -2
                 const last5 = f.scores.slice(0, 5);
                 const last5Avg = last5.reduce((a,b)=>a+b.score,0) / last5.length;
                 let formPoints = 0;
                 last5.forEach(s => {
-                    if (s.score >= 9.0) formPoints += 4;
-                    else if (s.score >= 8.0) formPoints += 2;
-                    else if (s.score >= 7.0) formPoints += 1;
-                    else if (s.score >= 6.5) formPoints += 0;
-                    else if (s.score >= 6.0) formPoints -= 1;
-                    else formPoints -= 2;
+                    if (s.score >= 9.0)       formPoints += 4;  // purple
+                    else if (s.score >= 8.0)  formPoints += 2;  // blue
+                    else if (s.score >= 7.0)  formPoints += 1;  // green
+                    else if (s.score >= 6.5)  formPoints += 0;  // yellow
+                    else if (s.score >= 6.0)  formPoints -= 1;  // orange
+                    else                      formPoints -= 2;  // red
                 });
 
                 // Calculate Star Count
@@ -598,44 +737,147 @@
             const f1 = processedFarmers.find(x => x.id === compareSelection[0]);
             const f2 = processedFarmers.find(x => x.id === compareSelection[1]);
 
-            // Rolling Avg History (Last 5 Updates)
-            const getRolling = (f) => {
-                return f.stats.rollingHistory.slice().reverse(); 
+            // Helper: who wins each stat
+            const wins = (v1, v2, higher = true) => higher ? v1 > v2 : v1 < v2;
+
+            // Build stat row HTML
+            const statRow = (label, v1, v2, higher = true, format = x => x) => {
+                const w1 = wins(v1, v2, higher);
+                const w2 = wins(v2, v1, higher);
+                return `
+                    <div class="flex items-center gap-3 py-2 border-b border-slate-800/50">
+                        <div class="flex-1 text-right">
+                            <span class="font-black ${w1 ? 'text-white' : 'text-slate-500'}">${format(v1)}</span>
+                            ${w1 ? '<i data-lucide="check-circle" class="w-3 h-3 text-indigo-400 inline ml-1"></i>' : ''}
+                        </div>
+                        <div class="w-28 text-center text-[10px] font-black uppercase tracking-wider text-slate-500 shrink-0">${label}</div>
+                        <div class="flex-1 text-left">
+                            ${w2 ? '<i data-lucide="check-circle" class="w-3 h-3 text-pink-400 inline mr-1"></i>' : ''}
+                            <span class="font-black ${w2 ? 'text-white' : 'text-slate-500'}">${format(v2)}</span>
+                        </div>
+                    </div>`;
             };
 
+            // Score distribution bars for last 14 days
+            const dist = (f) => {
+                const buckets = { 'Elite (≥9)': 0, 'Great (8+)': 0, 'Good (7+)': 0, 'OK (6.5+)': 0, 'Poor (<6.5)': 0 };
+                f.scores.slice(0, 14).forEach(s => {
+                    if (s.score >= 9) buckets['Elite (≥9)']++;
+                    else if (s.score >= 8) buckets['Great (8+)']++;
+                    else if (s.score >= 7) buckets['Good (7+)']++;
+                    else if (s.score >= 6.5) buckets['OK (6.5+)']++;
+                    else buckets['Poor (<6.5)']++;
+                });
+                return buckets;
+            };
+
+            const d1 = dist(f1), d2 = dist(f2);
+            const total = 14;
+            const distColors = { 'Elite (≥9)': '#a855f7', 'Great (8+)': '#3b82f6', 'Good (7+)': '#22c55e', 'OK (6.5+)': '#eab308', 'Poor (<6.5)': '#ef4444' };
+
+            const distBars = (d) => Object.entries(d).map(([label, count]) => {
+                const pct = Math.round((count / total) * 100);
+                return `
+                    <div class="mb-1.5">
+                        <div class="flex justify-between text-[10px] text-slate-500 mb-1 font-bold"><span>${label}</span><span>${count} game${count !== 1 ? 's' : ''}</span></div>
+                        <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:${distColors[label]}"></div></div>
+                    </div>`;
+            }).join('');
+
+            // Rolling history: last 5 rolling averages (labeled as actual dates)
+            const rollingLabels = f1.scores.slice(0, 5).map(s => s.date.slice(5)).reverse();
+
             content.innerHTML = `
-                <div class="grid grid-cols-2 gap-8 mb-8">
+                <!-- Header Cards -->
+                <div class="grid grid-cols-2 gap-6 mb-8">
                     <div class="glass-card p-6 rounded-2xl border-t-4 border-indigo-500">
                         <h3 class="text-2xl font-black text-white mb-1 flex items-center gap-2">${f1.name} ${f1.isKing ? '<i data-lucide="crown" class="w-5 h-5 text-amber-400 fill-amber-400"></i>' : ''}</h3>
-                        <p class="text-indigo-400 font-bold text-xs uppercase mb-6">${f1.grade.label}</p>
-                        <div class="space-y-3">
-                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Best (14d)</span><span class="font-black text-emerald-400">${f1.stats.best14}</span></div>
-                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Worst (14d)</span><span class="font-black text-red-400">${f1.stats.worst14}</span></div>
-                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Stars</span><span class="font-black text-yellow-400 flex items-center gap-1">${f1.stats.starCount} <i data-lucide="star" class="w-3 h-3 fill-yellow-400"></i></span></div>
-                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Profit Rate</span><span class="font-black ${f1.stats.profitRate >= 50 ? 'text-emerald-400' : 'text-red-400'}">${f1.stats.profitRate}%</span></div>
-                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Form Rating</span><span class="font-black ${f1.formPoints >= 0 ? 'text-amber-400' : 'text-slate-400'}">${f1.formPoints > 0 ? '+' : ''}${f1.formPoints}</span></div>
-                        </div>
+                        <p class="text-indigo-400 font-bold text-xs uppercase mb-1">${f1.grade.label}</p>
+                        <p class="text-3xl font-black ${getTailwindColor(f1.currentAvg)}">${f1.currentAvg}</p>
+                        <p class="text-[10px] text-slate-500 uppercase font-bold">14-day avg</p>
                     </div>
                     <div class="glass-card p-6 rounded-2xl border-t-4 border-pink-500">
                         <h3 class="text-2xl font-black text-white mb-1 flex items-center gap-2">${f2.name} ${f2.isKing ? '<i data-lucide="crown" class="w-5 h-5 text-amber-400 fill-amber-400"></i>' : ''}</h3>
-                        <p class="text-pink-400 font-bold text-xs uppercase mb-6">${f2.grade.label}</p>
-                        <div class="space-y-3">
-                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Best (14d)</span><span class="font-black text-emerald-400">${f2.stats.best14}</span></div>
-                             <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Worst (14d)</span><span class="font-black text-red-400">${f2.stats.worst14}</span></div>
-                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Stars</span><span class="font-black text-yellow-400 flex items-center gap-1">${f2.stats.starCount} <i data-lucide="star" class="w-3 h-3 fill-yellow-400"></i></span></div>
-                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Profit Rate</span><span class="font-black ${f2.stats.profitRate >= 50 ? 'text-emerald-400' : 'text-red-400'}">${f2.stats.profitRate}%</span></div>
-                            <div class="flex justify-between"><span class="text-xs text-slate-500 font-bold">Form Rating</span><span class="font-black ${f2.formPoints >= 0 ? 'text-amber-400' : 'text-slate-400'}">${f2.formPoints > 0 ? '+' : ''}${f2.formPoints}</span></div>
-                        </div>
+                        <p class="text-pink-400 font-bold text-xs uppercase mb-1">${f2.grade.label}</p>
+                        <p class="text-3xl font-black ${getTailwindColor(f2.currentAvg)}">${f2.currentAvg}</p>
+                        <p class="text-[10px] text-slate-500 uppercase font-bold">14-day avg</p>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="glass-card p-6 rounded-2xl"><h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Attribute DNA</h4><canvas id="compareRadarChart"></canvas></div>
-                    <div class="glass-card p-6 rounded-2xl"><h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Momentum</h4><canvas id="compareLineChart"></canvas></div>
+
+                <!-- Stat comparison table -->
+                <div class="glass-card p-6 rounded-2xl mb-8">
+                    <h4 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 text-center">Head-to-Head Stats</h4>
+                    ${statRow('Best (14d)', f1.stats.best14, f2.stats.best14, true, v => v.toFixed(1))}
+                    ${statRow('Worst (14d)', f1.stats.worst14, f2.stats.worst14, true, v => v.toFixed(1))}
+                    ${statRow('Profit Rate', f1.stats.profitRate, f2.stats.profitRate, true, v => v + '%')}
+                    ${statRow('Form Points', f1.formPoints, f2.formPoints, true, v => (v > 0 ? '+' : '') + v)}
+                    ${statRow('⭐ Stars', f1.stats.starCount, f2.stats.starCount, true)}
+                    ${statRow('Valuation', f1.price, f2.price, false, v => v + ' CP')}
+                </div>
+
+                <!-- Charts + Distribution -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="glass-card p-6 rounded-2xl md:col-span-1"><h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Attribute DNA</h4><canvas id="compareRadarChart"></canvas></div>
+                    <div class="glass-card p-6 rounded-2xl md:col-span-2"><h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Rolling 14d Average Momentum</h4><canvas id="compareLineChart" height="120"></canvas></div>
+                </div>
+
+                <!-- Score distribution -->
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h4 class="text-xs font-black uppercase tracking-widest text-indigo-400 mb-4">${f1.name} — Score Distribution (14d)</h4>
+                        ${distBars(d1)}
+                    </div>
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h4 class="text-xs font-black uppercase tracking-widest text-pink-400 mb-4">${f2.name} — Score Distribution (14d)</h4>
+                        ${distBars(d2)}
+                    </div>
                 </div>
             `;
             lucide.createIcons();
-            new Chart(document.getElementById('compareRadarChart'), { type: 'radar', data: { labels: ['Creativity', 'Consistency', 'Attendance', 'Presence', 'Quality'], datasets: [{ label: f1.name, data: Object.values(f1.attributes), borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.2)' }, { label: f2.name, data: Object.values(f2.attributes), borderColor: '#ec4899', backgroundColor: 'rgba(236, 72, 153, 0.2)' }] }, options: { scales: { r: { min: 0, max: 100, ticks: { display: false } } }, plugins: { legend: { labels: { color: '#fff' } } } } });
-            new Chart(document.getElementById('compareLineChart'), { type: 'line', data: { labels: ['-4d', '-3d', '-2d', 'Yesterday', 'Today'], datasets: [{ label: f1.name, data: f1.stats.rollingHistory.slice().reverse(), borderColor: '#6366f1', tension: 0.4 }, { label: f2.name, data: f2.stats.rollingHistory.slice().reverse(), borderColor: '#ec4899', tension: 0.4 }] }, options: { scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } }, plugins: { legend: { labels: { color: '#fff' } } } } });
+
+            // Radar
+            new Chart(document.getElementById('compareRadarChart'), {
+                type: 'radar',
+                data: {
+                    labels: ['Creativity', 'Consistency', 'Attendance', 'Presence', 'Quality'],
+                    datasets: [
+                        { label: f1.name, data: Object.values(f1.attributes), borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.15)', pointBackgroundColor: '#6366f1', borderWidth: 2 },
+                        { label: f2.name, data: Object.values(f2.attributes), borderColor: '#ec4899', backgroundColor: 'rgba(236, 72, 153, 0.15)', pointBackgroundColor: '#ec4899', borderWidth: 2 }
+                    ]
+                },
+                options: {
+                    scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.05)' }, pointLabels: { color: '#64748b', font: { weight: 'bold', size: 10 } } } },
+                    plugins: { legend: { labels: { color: '#fff', font: { weight: 'bold' } } } }
+                }
+            });
+
+            // Line: Rolling averages, actual dates as labels
+            const r1 = f1.stats.rollingHistory.slice().reverse();
+            const r2 = f2.stats.rollingHistory.slice().reverse();
+            new Chart(document.getElementById('compareLineChart'), {
+                type: 'line',
+                data: {
+                    labels: rollingLabels,
+                    datasets: [
+                        { label: f1.name, data: r1, borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.08)', tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#6366f1' },
+                        { label: f2.name, data: r2, borderColor: '#ec4899', backgroundColor: 'rgba(236,72,153,0.08)', tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#ec4899' }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: { min: 5, max: 10, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { weight: 'bold' } } },
+                        x: { grid: { display: false }, ticks: { color: '#64748b', font: { weight: 'bold', size: 10 } } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#fff', font: { weight: 'bold' } } },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}`
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         // --- CHARTING & HELPERS ---
@@ -644,6 +886,213 @@
             new Chart(document.getElementById('attributeChart'), { type: 'radar', data: { labels: ['Creativity', 'Consistency', 'Attendance', 'Presence', 'Quality'], datasets: [{ data: Object.values(f.attributes), backgroundColor: 'rgba(99, 102, 241, 0.2)', borderColor: '#6366f1', borderWidth: 3, pointBackgroundColor: '#6366f1' }] }, options: { scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.05)' }, pointLabels: { color: '#64748b', font: { weight: 'bold', size: 10 } } } }, plugins: { legend: { display: false } } } });
             const histData = [...f.scores].reverse().slice(-10);
             new Chart(document.getElementById('historyChart'), { type: 'bar', data: { labels: histData.map(s => s.date.slice(5)), datasets: [{ data: histData.map(s => s.score), backgroundColor: histData.map(s => getHexColor(s.score)), borderRadius: 8 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 10, grid: { color: 'rgba(255,255,255,0.05)' } } } } });
+        }
+
+        // ==============================
+        // TUTORIAL
+        // ==============================
+        const TOTAL_TUT_STEPS = 8;
+        let currentTutStep = 0;
+
+        function buildTutDots() {
+            const el = document.getElementById('tutDots');
+            el.innerHTML = '';
+            for (let i = 0; i < TOTAL_TUT_STEPS; i++) {
+                const d = document.createElement('div');
+                d.className = `tutorial-dot${i === currentTutStep ? ' active' : ''}`;
+                el.appendChild(d);
+            }
+        }
+
+        function updateTutUI() {
+            for (let i = 0; i < TOTAL_TUT_STEPS; i++) {
+                const s = document.getElementById(`tutStep${i}`);
+                if (s) s.classList.toggle('active', i === currentTutStep);
+            }
+            buildTutDots();
+            const prevBtn = document.getElementById('tutPrevBtn');
+            const nextBtn = document.getElementById('tutNextBtn');
+            if (prevBtn) prevBtn.classList.toggle('hidden', currentTutStep === 0);
+            if (nextBtn) nextBtn.innerText = currentTutStep === TOTAL_TUT_STEPS - 1 ? '✓ Got it!' : 'Next →';
+        }
+
+        function tutNext() {
+            if (currentTutStep < TOTAL_TUT_STEPS - 1) {
+                currentTutStep++;
+                updateTutUI();
+            } else {
+                closeTutorial();
+            }
+        }
+
+        function tutPrev() {
+            if (currentTutStep > 0) { currentTutStep--; updateTutUI(); }
+        }
+
+        function openTutorial() {
+            currentTutStep = 0;
+            document.getElementById('tutorialOverlay').classList.remove('hidden');
+            updateTutUI();
+        }
+
+        function closeTutorial() {
+            document.getElementById('tutorialOverlay').classList.add('hidden');
+            localStorage.setItem('cr_tutorial_done', '1');
+        }
+
+        // ==============================
+        // ACCOUNT & GLOBAL LEADERBOARD (Anthropic API powered)
+        // ==============================
+        let accountUser = null;
+
+        function loadAccountUser() {
+            const saved = localStorage.getItem('cr_account');
+            if (saved) accountUser = JSON.parse(saved);
+        }
+
+        function saveAccountUser(u) {
+            accountUser = u;
+            localStorage.setItem('cr_account', JSON.stringify(u));
+        }
+
+        function openAccountModal() {
+            document.getElementById('accountModal').classList.remove('hidden');
+            lucide.createIcons();
+            renderAccountPanel();
+            loadGlobalLeaderboard();
+        }
+
+        function closeAccountModal() {
+            document.getElementById('accountModal').classList.add('hidden');
+        }
+
+        function renderAccountPanel() {
+            const panel = document.getElementById('accountPanel');
+            if (accountUser) {
+                const nw = parseFloat(document.getElementById('netWorth').innerText) || 0;
+                panel.innerHTML = `
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <div class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Signed in as</div>
+                            <div class="text-xl font-black text-white flex items-center gap-2">
+                                <span class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-black">${accountUser.username[0].toUpperCase()}</span>
+                                ${accountUser.username}
+                            </div>
+                            <div class="text-xs text-slate-500 mt-1">Your current net worth: <span class="text-emerald-400 font-bold">${nw.toFixed(0)} CP</span></div>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="publishToLeaderboard()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-wider rounded-xl transition flex items-center gap-2">
+                                <i data-lucide="upload" class="w-3.5 h-3.5"></i> Publish Score
+                            </button>
+                            <button onclick="signOut()" class="px-4 py-2 bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-slate-400 text-xs font-black uppercase tracking-wider rounded-xl transition">Sign Out</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                panel.innerHTML = `
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                        <div>
+                            <div class="text-sm font-bold text-white mb-1">Create a free account</div>
+                            <div class="text-xs text-slate-400">Appear on the global leaderboard and track your rank against other managers.</div>
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <input type="text" id="usernameInput" placeholder="Pick a username..." maxlength="20" class="bg-slate-800 border border-slate-700 focus:border-indigo-500 outline-none text-white text-sm px-3 py-2 rounded-xl w-full sm:w-48 transition">
+                            <button onclick="createAccount()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-wider rounded-xl transition whitespace-nowrap flex items-center gap-2">
+                                <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Join
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        async function createAccount() {
+            const input = document.getElementById('usernameInput');
+            const username = input ? input.value.trim() : '';
+            if (!username || username.length < 2) return showToast('Enter a username (min 2 chars)', 'error');
+            const userId = 'user_' + username.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Math.random().toString(36).slice(2, 6);
+            saveAccountUser({ username, userId });
+            showToast(`Account created! Welcome, ${username}!`, 'gold');
+            await publishToLeaderboard();
+            renderAccountPanel();
+        }
+
+        function signOut() {
+            accountUser = null;
+            localStorage.removeItem('cr_account');
+            renderAccountPanel();
+        }
+
+        async function publishToLeaderboard() {
+            if (!accountUser) return showToast('Create an account first', 'error');
+            const nw = parseFloat(document.getElementById('netWorth').innerText) || 0;
+            const rosterNames = wallet.roster.map(id => {
+                const f = processedFarmers.find(x => x.id === id);
+                return f ? f.name : id;
+            });
+            const entry = {
+                username: accountUser.username,
+                netWorth: nw,
+                roster: rosterNames,
+                timestamp: Date.now()
+            };
+            try {
+                await window.storage.set(accountUser.userId, JSON.stringify(entry), true);
+                showToast('Leaderboard updated!', 'success');
+                loadGlobalLeaderboard();
+            } catch (e) {
+                showToast('Could not publish. Try again.', 'error');
+            }
+        }
+
+        async function loadGlobalLeaderboard() {
+            const listEl = document.getElementById('globalLbList');
+            listEl.innerHTML = `<div class="p-8 text-center"><div class="loading-spinner mx-auto mb-3"></div><p class="text-slate-500 text-sm font-bold animate-pulse">FETCHING MANAGERS...</p></div>`;
+            try {
+                const result = await window.storage.list('user_', true);
+                if (!result || !result.keys || result.keys.length === 0) {
+                    listEl.innerHTML = `<div class="p-8 text-center text-slate-500 font-bold text-sm">No managers yet. Be the first to publish your score!</div>`;
+                    return;
+                }
+                const entries = [];
+                for (const key of result.keys) {
+                    try {
+                        const r = await window.storage.get(key, true);
+                        if (r) entries.push({ key, ...JSON.parse(r.value) });
+                    } catch(e) {}
+                }
+                entries.sort((a, b) => b.netWorth - a.netWorth);
+
+                document.getElementById('lbLastUpdated').innerText = `${entries.length} manager${entries.length !== 1 ? 's' : ''} registered`;
+
+                listEl.innerHTML = entries.map((e, i) => {
+                    const isMe = accountUser && e.username === accountUser.username;
+                    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`;
+                    const rowClass = i === 0 ? 'lb-gold' : i === 1 ? 'lb-silver' : i === 2 ? 'lb-bronze' : '';
+                    const rosterHtml = e.roster && e.roster.length > 0
+                        ? e.roster.map(name => `<span class="px-2 py-0.5 bg-slate-800 text-slate-300 rounded-md text-[10px] font-bold border border-slate-700">${name}</span>`).join('')
+                        : '<span class="text-slate-600 text-[10px]">No roster</span>';
+                    return `
+                        <div class="lb-row p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${rowClass} ${isMe ? 'bg-indigo-600/10' : ''}">
+                            <div class="w-10 text-center font-black text-lg ${i === 0 ? 'text-amber-400' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-amber-600' : 'text-slate-600'}">${medal}</div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-black text-white flex items-center gap-2">
+                                    ${e.username}
+                                    ${isMe ? '<span class="text-[9px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-black uppercase tracking-wider">You</span>' : ''}
+                                </div>
+                                <div class="flex flex-wrap gap-1 mt-1">${rosterHtml}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-lg font-black text-emerald-400">${e.netWorth.toFixed(0)}</div>
+                                <div class="text-[10px] text-slate-500 font-bold uppercase">CP Net Worth</div>
+                            </div>
+                        </div>`;
+                }).join('');
+                lucide.createIcons();
+            } catch(e) {
+                listEl.innerHTML = `<div class="p-8 text-center text-slate-500 font-bold text-sm">Failed to load leaderboard.</div>`;
+            }
         }
 
         window.onload = init;
