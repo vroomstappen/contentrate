@@ -566,6 +566,8 @@
             startCooldownTimer();
             const emoji = totalChange >= 50 ? '🚀' : (totalChange >= 0 ? '🤑' : '📉');
             showToast(`${emoji} Matchday: ${totalChange >= 0 ? '+' : ''}${totalChange.toFixed(1)} CP`, totalChange >= 0 ? 'gold' : 'error');
+            // Auto-publish score to leaderboard after each match
+            silentPublish();
         }
 
         function getRankArrow(change) {
@@ -947,7 +949,10 @@
 
         function loadAccountUser() {
             const saved = localStorage.getItem('cr_account');
-            if (saved) accountUser = JSON.parse(saved);
+            if (saved) {
+                accountUser = JSON.parse(saved);
+                startAutoSync(); // begin hourly background sync
+            }
         }
 
         function saveAccountUser(u) {
@@ -970,6 +975,9 @@
             const panel = document.getElementById('accountPanel');
             if (accountUser) {
                 const nw = parseFloat(document.getElementById('netWorth').innerText) || 0;
+                const lastSync = accountUser.lastSync
+                    ? new Date(accountUser.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : 'Never';
                 panel.innerHTML = `
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
@@ -978,11 +986,16 @@
                                 <span class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-black">${accountUser.username[0].toUpperCase()}</span>
                                 ${accountUser.username}
                             </div>
-                            <div class="text-xs text-slate-500 mt-1">Your current net worth: <span class="text-emerald-400 font-bold">${nw.toFixed(0)} CP</span></div>
+                            <div class="text-xs text-slate-500 mt-1">
+                                Net worth: <span class="text-emerald-400 font-bold">${nw.toFixed(0)} CP</span>
+                                <span class="mx-2 text-slate-700">·</span>
+                                <span id="lastSyncLabel">Last synced: ${lastSync}</span>
+                                <span class="ml-2 text-[10px] text-indigo-400 font-bold">· Auto-syncs hourly</span>
+                            </div>
                         </div>
                         <div class="flex gap-3">
-                            <button onclick="publishToLeaderboard()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-wider rounded-xl transition flex items-center gap-2">
-                                <i data-lucide="upload" class="w-3.5 h-3.5"></i> Publish Score
+                            <button onclick="publishToLeaderboard()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-black uppercase tracking-wider rounded-xl transition flex items-center gap-2" title="Sync now">
+                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now
                             </button>
                             <button onclick="signOut()" class="px-4 py-2 bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-slate-400 text-xs font-black uppercase tracking-wider rounded-xl transition">Sign Out</button>
                         </div>
@@ -993,7 +1006,7 @@
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                         <div>
                             <div class="text-sm font-bold text-white mb-1">Create a free account</div>
-                            <div class="text-xs text-slate-400">Appear on the global leaderboard and track your rank against other managers.</div>
+                            <div class="text-xs text-slate-400">Appear on the global leaderboard. Your score syncs automatically every hour.</div>
                         </div>
                         <div class="flex gap-2 w-full sm:w-auto">
                             <input type="text" id="usernameInput" placeholder="Pick a username..." maxlength="20" class="bg-slate-800 border border-slate-700 focus:border-indigo-500 outline-none text-white text-sm px-3 py-2 rounded-xl w-full sm:w-48 transition">
@@ -1013,6 +1026,7 @@
             if (!username || username.length < 2) return showToast('Enter a username (min 2 chars)', 'error');
             const userId = 'user_' + username.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Math.random().toString(36).slice(2, 6);
             saveAccountUser({ username, userId });
+            startAutoSync();
             showToast(`Account created! Welcome, ${username}!`, 'gold');
             await publishToLeaderboard();
             renderAccountPanel();
@@ -1026,6 +1040,48 @@
 
         // Paste your Google Apps Script Web App URL here after deploying
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzyhtAE6AuVTzfNmt9ehnLzr7CDxd4blKSBAXUJm3xCCujVUPfmGbhrV4_XnDjqZdktgw/exec';
+        const AUTO_SYNC_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+        let autoSyncInterval = null;
+
+        // Silent background publish — no toasts, no errors shown to user
+        async function silentPublish() {
+            if (!accountUser) return;
+            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return;
+            const nw = parseFloat(document.getElementById('netWorth').innerText) || 0;
+            const rosterNames = wallet.roster.map(id => {
+                const f = processedFarmers.find(x => x.id === id);
+                return f ? f.name : id;
+            });
+            try {
+                const res = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        userId: accountUser.userId,
+                        username: accountUser.username,
+                        netWorth: nw,
+                        roster: rosterNames
+                    })
+                });
+                const json = await res.json();
+                if (json.ok) {
+                    accountUser.lastSync = Date.now();
+                    localStorage.setItem('cr_account', JSON.stringify(accountUser));
+                    // Refresh the "last synced" label if the modal is open
+                    const syncLabel = document.getElementById('lastSyncLabel');
+                    if (syncLabel) syncLabel.innerText = 'Last synced: just now';
+                }
+            } catch(e) {
+                // Fail silently — background sync, user doesn't need to know
+            }
+        }
+
+        // Start the hourly background auto-sync
+        function startAutoSync() {
+            if (autoSyncInterval) clearInterval(autoSyncInterval);
+            autoSyncInterval = setInterval(() => {
+                silentPublish();
+            }, AUTO_SYNC_INTERVAL_MS);
+        }
 
         async function publishToLeaderboard() {
             if (!accountUser) return showToast('Create an account first', 'error');
@@ -1049,7 +1105,10 @@
                 });
                 const json = await res.json();
                 if (!json.ok) throw new Error(json.error || 'Unknown error');
+                accountUser.lastSync = Date.now();
+                localStorage.setItem('cr_account', JSON.stringify(accountUser));
                 showToast('Leaderboard updated! 🏆', 'success');
+                renderAccountPanel();
                 loadGlobalLeaderboard();
             } catch (e) {
                 console.error('Publish error:', e);
