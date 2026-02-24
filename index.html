@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ContentRate Pro 3</title>
+    <title>ContentRate 3.51</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
@@ -269,7 +269,6 @@
     <script>
         const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSMTqwP3ViGcOKh0lYRGL9rdAL-Q84U85iZSLTqwdT3OGXKhMvIsI-pNC_cbRjcod0teMJ7YbRXREhy/pub?gid=607342177&single=true&output=csv';
         const MAX_ROSTER_SIZE = 4;
-        const COOLDOWN_MS = 24 * 60 * 60 * 1000; 
 
         let processedFarmers = [];
         let compareSelection = [];
@@ -279,7 +278,7 @@
         let wallet = {
             balance: 100,
             roster: [],
-            lastCollect: 0
+            lastMatchDate: null
         };
 
         function getHexColor(score) {
@@ -343,7 +342,6 @@
             if (savedWallet) {
                 wallet = JSON.parse(savedWallet);
             }
-            startCooldownTimer();
 
             try {
                 const response = await fetch(SHEET_URL);
@@ -474,6 +472,7 @@
 
             processedFarmers = tempFarmers;
             updateHUD();
+            startCooldownTimer();
             document.getElementById('loading-state').classList.add('hidden');
             document.getElementById('view-container').classList.remove('hidden');
             renderLeaderboard();
@@ -508,20 +507,20 @@
         function startCooldownTimer() {
             if(cooldownTimerInterval) clearInterval(cooldownTimerInterval);
             const checkTimer = () => {
-                const diff = Date.now() - (wallet.lastCollect || 0);
+                const latestScoreDate = processedFarmers.length > 0 ? processedFarmers[0].scores[0]?.date : null;
                 const btn = document.getElementById('collectBtn');
                 const btnText = document.getElementById('collectBtnText');
-                if (diff < COOLDOWN_MS) {
-                    const remaining = COOLDOWN_MS - diff;
+                const alreadyPlayed = wallet.lastMatchDate && latestScoreDate && wallet.lastMatchDate === latestScoreDate;
+                if (alreadyPlayed) {
                     btn.classList.add('btn-disabled');
-                    btnText.innerText = `${Math.floor(remaining/3600000)}h ${Math.floor((remaining%3600000)/60000)}m`;
+                    btnText.innerText = 'Played ✓';
                 } else {
                     btn.classList.remove('btn-disabled');
                     btnText.innerText = 'Run Daily Match';
                 }
             };
             checkTimer();
-            cooldownTimerInterval = setInterval(checkTimer, 60000);
+            cooldownTimerInterval = setInterval(checkTimer, 30000);
         }
 
         function handleRecruit(farmerId) {
@@ -545,8 +544,8 @@
         }
 
         function collectRewards() {
-            const now = Date.now();
-            if (now - (wallet.lastCollect || 0) < COOLDOWN_MS) return showToast("Already played today.", "error");
+            const latestScoreDate = processedFarmers.length > 0 ? processedFarmers[0].scores[0]?.date : null;
+            if (wallet.lastMatchDate && wallet.lastMatchDate === latestScoreDate) return showToast("Already played this round.", "error");
             if (wallet.roster.length === 0) return showToast("Recruit players first!", "neutral");
             
             let totalChange = 0;
@@ -562,7 +561,7 @@
             });
             wallet.balance += totalChange;
             if(wallet.balance < 0) wallet.balance = 0;
-            wallet.lastCollect = now;
+            wallet.lastMatchDate = latestScoreDate;
             updateHUD();
             startCooldownTimer();
             const emoji = totalChange >= 50 ? '🚀' : (totalChange >= 0 ? '🤑' : '📉');
@@ -786,13 +785,49 @@
                         <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:${distColors[label]}"></div></div>
                     </div>`;
             }).join('');
+            // --- Last 5 leaderboard positions ---
+            // At score index i, recalculate every farmer's 14-day average as it was at that point
+            // (using scores[i..i+13] as the window), then sort to find true leaderboard rank
+            const getLeaderboardRankAtIndex = (f, i) => {
+                const mySlice = f.scores.slice(i, i + 14);
+                if (mySlice.length === 0) return null;
+                const myAvg = mySlice.reduce((a, b) => a + b.score, 0) / mySlice.length;
+                const rank = processedFarmers.filter(other => {
+                    const slice = other.scores.slice(i, i + 14);
+                    if (slice.length === 0) return false;
+                    const avg = slice.reduce((a, b) => a + b.score, 0) / slice.length;
+                    return avg > myAvg;
+                }).length + 1;
+                return { date: f.scores[i]?.date, rank };
+            };
 
-            // Rolling history: last 5 rolling averages (labeled as actual dates)
-            const rollingLabels = f1.scores.slice(0, 5).map(s => s.date.slice(5)).reverse();
+            const pos1 = [0,1,2,3,4].map(i => getLeaderboardRankAtIndex(f1, i));
+            const pos2 = [0,1,2,3,4].map(i => getLeaderboardRankAtIndex(f2, i));
+
+            const rankStyle = (rank) => rank === 1 ? 'text-amber-400 font-black' : rank === 2 ? 'text-slate-300 font-black' : rank === 3 ? 'text-orange-400 font-black' : 'text-slate-500 font-bold';
+            const rankLabel = (rank) => rank === 1 ? '🥇 #1' : rank === 2 ? '🥈 #2' : rank === 3 ? '🥉 #3' : `#${rank}`;
+
+            const positionRow = (p1, p2, label) => `
+                <div class="flex items-center gap-2 py-2.5 border-b border-slate-800/40">
+                    <div class="w-16 text-center text-[10px] font-black uppercase tracking-wider text-slate-600">${label}</div>
+                    <div class="flex-1 flex items-center justify-end gap-2">
+                        ${p1 ? `<span class="text-sm ${rankStyle(p1.rank)}">${rankLabel(p1.rank)}</span>` : '<span class="text-slate-700 text-xs font-bold">—</span>'}
+                    </div>
+                    <div class="w-16 text-center text-[10px] text-slate-600 font-bold">${p1?.date?.slice(5) ?? ''}</div>
+                    <div class="flex-1 flex items-center justify-start gap-2">
+                        ${p2 ? `<span class="text-sm ${rankStyle(p2.rank)}">${rankLabel(p2.rank)}</span>` : '<span class="text-slate-700 text-xs font-bold">—</span>'}
+                    </div>
+                </div>`;
+
+            const hist1 = f1.scores.slice(0, 8).reverse();
+            const hist2 = f2.scores.slice(0, 8).reverse();
+            // Use union of dates for labels
+            const allDates = [...new Set([...hist1.map(s=>s.date), ...hist2.map(s=>s.date)])].sort();
+            const getScore = (scores, date) => { const s = scores.find(x => x.date === date); return s ? s.score : null; };
 
             content.innerHTML = `
                 <!-- Header Cards -->
-                <div class="grid grid-cols-2 gap-6 mb-8">
+                <div class="grid grid-cols-2 gap-6 mb-6">
                     <div class="glass-card p-6 rounded-2xl border-t-4 border-indigo-500">
                         <h3 class="text-2xl font-black text-white mb-1 flex items-center gap-2">${f1.name} ${f1.isKing ? '<i data-lucide="crown" class="w-5 h-5 text-amber-400 fill-amber-400"></i>' : ''}</h3>
                         <p class="text-indigo-400 font-bold text-xs uppercase mb-1">${f1.grade.label}</p>
@@ -807,8 +842,21 @@
                     </div>
                 </div>
 
+                <!-- Last 5 Positions -->
+                <div class="glass-card p-6 rounded-2xl mb-6">
+                    <h4 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-1 text-center">Last 5 Positions</h4>
+                    <p class="text-[10px] text-slate-600 text-center mb-4 font-bold">Leaderboard rank at each of the last 5 score updates</p>
+                    <div class="flex items-center gap-2 pb-2 border-b border-slate-700/60 mb-1">
+                        <div class="w-16"></div>
+                        <div class="flex-1 text-right text-[10px] font-black uppercase tracking-wider text-indigo-400">${f1.name}</div>
+                        <div class="w-12 text-center text-[10px] text-slate-600 font-bold">Date</div>
+                        <div class="flex-1 text-left text-[10px] font-black uppercase tracking-wider text-pink-400">${f2.name}</div>
+                    </div>
+                    ${['Latest','2nd','3rd','4th','5th'].map((label, i) => positionRow(pos1[i], pos2[i], label)).join('')}
+                </div>
+
                 <!-- Stat comparison table -->
-                <div class="glass-card p-6 rounded-2xl mb-8">
+                <div class="glass-card p-6 rounded-2xl mb-6">
                     <h4 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 text-center">Head-to-Head Stats</h4>
                     ${statRow('Best (14d)', f1.stats.best14, f2.stats.best14, true, v => v.toFixed(1))}
                     ${statRow('Worst (14d)', f1.stats.worst14, f2.stats.worst14, true, v => v.toFixed(1))}
@@ -818,20 +866,36 @@
                     ${statRow('Valuation', f1.price, f2.price, false, v => v + ' CP')}
                 </div>
 
-                <!-- Charts + Distribution -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="glass-card p-6 rounded-2xl md:col-span-1"><h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Attribute DNA</h4><canvas id="compareRadarChart"></canvas></div>
-                    <div class="glass-card p-6 rounded-2xl md:col-span-2"><h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Rolling 14d Average Momentum</h4><canvas id="compareLineChart" height="120"></canvas></div>
+                <!-- Momentum charts — one per farmer, stacked -->
+                <div class="glass-card p-6 rounded-2xl mb-6">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-5">Score Momentum (Last 8)</h4>
+                    <div class="mb-6">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block"></span>
+                            <span class="text-xs font-black text-indigo-400 uppercase tracking-wider">${f1.name}</span>
+                            <span class="ml-auto text-[10px] text-slate-500 font-bold">avg <span class="${getTailwindColor(f1.currentAvg)} font-black">${f1.currentAvg}</span></span>
+                        </div>
+                        <canvas id="momentum1Chart" height="80"></canvas>
+                    </div>
+                    <div class="border-t border-slate-800/60 pt-6">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="w-2.5 h-2.5 rounded-full bg-pink-500 inline-block"></span>
+                            <span class="text-xs font-black text-pink-400 uppercase tracking-wider">${f2.name}</span>
+                            <span class="ml-auto text-[10px] text-slate-500 font-bold">avg <span class="${getTailwindColor(f2.currentAvg)} font-black">${f2.currentAvg}</span></span>
+                        </div>
+                        <canvas id="momentum2Chart" height="80"></canvas>
+                    </div>
                 </div>
 
-                <!-- Score distribution -->
-                <div class="grid grid-cols-2 gap-6">
+                <!-- Radar + Distribution -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-card p-6 rounded-2xl md:col-span-1"><h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Attribute DNA</h4><canvas id="compareRadarChart"></canvas></div>
                     <div class="glass-card p-6 rounded-2xl">
-                        <h4 class="text-xs font-black uppercase tracking-widest text-indigo-400 mb-4">${f1.name} — Score Distribution (14d)</h4>
+                        <h4 class="text-xs font-black uppercase tracking-widest text-indigo-400 mb-4">${f1.name} — Distribution (14d)</h4>
                         ${distBars(d1)}
                     </div>
                     <div class="glass-card p-6 rounded-2xl">
-                        <h4 class="text-xs font-black uppercase tracking-widest text-pink-400 mb-4">${f2.name} — Score Distribution (14d)</h4>
+                        <h4 class="text-xs font-black uppercase tracking-widest text-pink-400 mb-4">${f2.name} — Distribution (14d)</h4>
                         ${distBars(d2)}
                     </div>
                 </div>
@@ -850,37 +914,83 @@
                 },
                 options: {
                     scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.05)' }, pointLabels: { color: '#64748b', font: { weight: 'bold', size: 10 } } } },
-                    plugins: { legend: { labels: { color: '#fff', font: { weight: 'bold' } } } }
+                    plugins: { legend: { display: false } }
                 }
             });
 
-            // Line: Rolling averages, actual dates as labels
-            const r1 = f1.stats.rollingHistory.slice().reverse();
-            const r2 = f2.stats.rollingHistory.slice().reverse();
-            new Chart(document.getElementById('compareLineChart'), {
-                type: 'line',
-                data: {
-                    labels: rollingLabels,
-                    datasets: [
-                        { label: f1.name, data: r1, borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.08)', tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#6366f1' },
-                        { label: f2.name, data: r2, borderColor: '#ec4899', backgroundColor: 'rgba(236,72,153,0.08)', tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#ec4899' }
-                    ]
-                },
-                options: {
-                    scales: {
-                        y: { min: 5, max: 10, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { weight: 'bold' } } },
-                        x: { grid: { display: false }, ticks: { color: '#64748b', font: { weight: 'bold', size: 10 } } }
+            // Momentum charts — one per farmer, clean line with coloured points
+            const momentumChart = (canvasId, hist, avgVal, lineColor) => {
+                new Chart(document.getElementById(canvasId), {
+                    type: 'line',
+                    data: {
+                        labels: hist.map(s => s.date.slice(5)),
+                        datasets: [
+                            // Avg reference band (filled area)
+                            {
+                                data: Array(hist.length).fill(avgVal),
+                                borderColor: lineColor + '40',
+                                borderWidth: 1,
+                                borderDash: [5, 4],
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0,
+                            },
+                            // Main score line
+                            {
+                                data: hist.map(s => s.score),
+                                borderColor: lineColor,
+                                borderWidth: 2.5,
+                                backgroundColor: lineColor + '12',
+                                fill: true,
+                                tension: 0.35,
+                                pointRadius: hist.map(s => 6),
+                                pointBackgroundColor: hist.map(s => getHexColor(s.score)),
+                                pointBorderColor: hist.map(s => getHexColor(s.score)),
+                                pointBorderWidth: 2,
+                                pointHoverRadius: 8,
+                            }
+                        ]
                     },
-                    plugins: {
-                        legend: { labels: { color: '#fff', font: { weight: 'bold' } } },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}`
+                    options: {
+                        responsive: true,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            y: {
+                                min: Math.max(4, Math.floor(Math.min(...hist.map(s=>s.score)) - 0.5)),
+                                max: Math.min(10, Math.ceil(Math.max(...hist.map(s=>s.score)) + 0.5)),
+                                grid: { color: 'rgba(255,255,255,0.03)' },
+                                ticks: { color: '#475569', font: { weight: 'bold', size: 9 }, callback: v => v.toFixed(1) },
+                                border: { display: false }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#475569', font: { weight: 'bold', size: 9 } },
+                                border: { display: false }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(15,23,42,0.97)',
+                                borderColor: lineColor + '50',
+                                borderWidth: 1,
+                                titleColor: '#94a3b8',
+                                bodyColor: '#fff',
+                                padding: 10,
+                                callbacks: {
+                                    label: ctx => {
+                                        if (ctx.datasetIndex === 0) return ` Avg: ${avgVal}`;
+                                        return ` Score: ${ctx.parsed.y.toFixed(1)}`;
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            });
+                });
+            };
+
+            momentumChart('momentum1Chart', hist1, f1.currentAvg, '#6366f1');
+            momentumChart('momentum2Chart', hist2, f2.currentAvg, '#ec4899');
         }
 
         // --- CHARTING & HELPERS ---
@@ -1174,3 +1284,4 @@
     </script>
 </body>
 </html>
+
