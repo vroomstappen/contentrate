@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ContentRate 3.51</title>
+    <title>ContentRate Pro 3.51</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
@@ -1163,7 +1163,7 @@
         // Silent background publish — no toasts, no errors shown to user
         async function silentPublish() {
             if (!accountUser) return;
-            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxx2J-o4h95seQFBQw6ClMdtWv6Yh6EDxRidFfXvG3HdenOz26u7Bh5jBJzZP9ekkkY1A/exec') return;
+            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return;
             const nw = parseFloat(document.getElementById('netWorth').innerText) || 0;
             const rosterNames = wallet.roster.map(id => {
                 const f = processedFarmers.find(x => x.id === id);
@@ -1202,7 +1202,7 @@
 
         async function publishToLeaderboard() {
             if (!accountUser) return showToast('Create an account first', 'error');
-            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxx2J-o4h95seQFBQw6ClMdtWv6Yh6EDxRidFfXvG3HdenOz26u7Bh5jBJzZP9ekkkY1A/exec') {
+            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
                 return showToast('Paste your Apps Script URL into index.html first!', 'error');
             }
             const nw = parseFloat(document.getElementById('netWorth').innerText) || 0;
@@ -1237,7 +1237,7 @@
             const listEl = document.getElementById('globalLbList');
             listEl.innerHTML = `<div class="p-8 text-center"><div class="loading-spinner mx-auto mb-3"></div><p class="text-slate-500 text-sm font-bold animate-pulse">FETCHING MANAGERS...</p></div>`;
 
-            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxx2J-o4h95seQFBQw6ClMdtWv6Yh6EDxRidFfXvG3HdenOz26u7Bh5jBJzZP9ekkkY1A/exec') {
+            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
                 listEl.innerHTML = `<div class="p-8 text-center text-slate-500 font-bold text-sm">⚙️ Paste your Apps Script URL into index.html to enable the leaderboard.</div>`;
                 return;
             }
