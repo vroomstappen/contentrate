@@ -3,1333 +3,641 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ContentRate Pro 3.51</title>
+    <title>ContentRate 4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: #f8fafc; min-height: 100vh; }
-        .glass-card { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease; }
-        .glass-card:hover { border: 1px solid rgba(99, 102, 241, 0.3); transform: translateY(-2px); }
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
-        .loading-spinner { border: 3px solid rgba(99, 102, 241, 0.1); border-top: 3px solid #6366f1; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .btn-disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
-
-        /* --- SIGNATURE KING CARD --- */
-        .signature-card {
-            position: relative;
-            overflow: hidden;
-            background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 1)) !important;
-            border: 1px solid rgba(251, 191, 36, 0.6) !important; /* Gold Border */
-            box-shadow: 0 0 25px rgba(251, 191, 36, 0.2) !important;
-        }
-
-        .signature-card::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: -150%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                90deg,
-                transparent,
-                rgba(255, 255, 255, 0.15),
-                transparent
-            );
-            transform: skewX(-20deg);
-            animation: shine 4s infinite linear;
-            pointer-events: none;
-        }
-
-        @keyframes shine {
-            0% { left: -150%; }
-            40% { left: 150%; }
-            100% { left: 150%; }
-        }
-
-        /* Rank Arrows */
-        .rank-up { color: #34d399; font-size: 0.7rem; display: flex; flex-direction: column; align-items: center; font-weight: 800; }
-        .rank-down { color: #f87171; font-size: 0.7rem; display: flex; flex-direction: column; align-items: center; font-weight: 800; }
-        .rank-same { color: #64748b; font-size: 1rem; font-weight: 800; }
-
-        /* --- TUTORIAL OVERLAY --- */
-        #tutorialOverlay {
-            position: fixed; inset: 0; background: rgba(2, 6, 23, 0.92);
-            backdrop-filter: blur(8px); z-index: 100; align-items: center; justify-content: center;
-        }
-        #tutorialOverlay:not(.hidden) { display: flex; }
-        .tutorial-card { animation: slideUp 0.5s ease-out forwards; }
-        .tutorial-step { display: none; }
-        .tutorial-step.active { display: block; }
-        .tutorial-dot { width: 8px; height: 8px; border-radius: 50%; background: #334155; transition: all 0.3s; }
-        .tutorial-dot.active { background: #6366f1; width: 20px; border-radius: 4px; }
-
-        /* --- ACCOUNT / LEADERBOARD MODAL --- */
-        #accountModal { position: fixed; inset: 0; background: rgba(2,6,23,0.95); backdrop-filter: blur(16px); z-index: 80; }
-        .lb-row { transition: all 0.2s; }
-        .lb-row:hover { background: rgba(99,102,241,0.08); }
-        .lb-gold { border-left: 3px solid #f59e0b; }
-        .lb-silver { border-left: 3px solid #94a3b8; }
-        .lb-bronze { border-left: 3px solid #b45309; }
-
-        /* --- NET WORTH BADGE --- */
-        @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); } 50% { box-shadow: 0 0 0 8px rgba(99,102,241,0); } }
-        .nw-pulse { animation: pulse-glow 2s infinite; }
-
-        /* --- STAT BARS --- */
-        .stat-bar-track { height: 6px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; }
-        .stat-bar-fill { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
-
-        /* Compare win highlight */
-        .compare-win { background: rgba(99,102,241,0.15) !important; border-color: rgba(99,102,241,0.4) !important; }
-    </style>
     <script defer src="https://cloud.umami.is/script.js" data-website-id="6abf24d7-57ec-4432-9d57-9fcfd274cb56"></script>
+    <style>
+        body{font-family:'Plus Jakarta Sans',sans-serif;background:#020617;color:#f8fafc;min-height:100vh}
+        .glass-card{background:rgba(30,41,59,.4);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.05);transition:all .3s ease}
+        .glass-card:hover{border-color:rgba(99,102,241,.3);transform:translateY(-2px)}
+        .custom-scroll::-webkit-scrollbar{width:6px}
+        .custom-scroll::-webkit-scrollbar-thumb{background:#334155;border-radius:10px}
+        @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .animate-slide-up{animation:slideUp .5s ease-out forwards}
+        .loading-spinner{border:3px solid rgba(99,102,241,.1);border-top:3px solid #6366f1;border-radius:50%;width:24px;height:24px;animation:spin 1s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .btn-disabled{opacity:.5;cursor:not-allowed;filter:grayscale(100%);pointer-events:none}
+        .signature-card{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(30,41,59,.95),rgba(15,23,42,1))!important;border:1px solid rgba(251,191,36,.6)!important;box-shadow:0 0 25px rgba(251,191,36,.2)!important}
+        .signature-card::before{content:"";position:absolute;top:0;left:-150%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transform:skewX(-20deg);animation:shine 4s infinite linear;pointer-events:none}
+        @keyframes shine{0%{left:-150%}40%{left:150%}100%{left:150%}}
+        .rank-up{color:#34d399;font-size:.7rem;display:flex;flex-direction:column;align-items:center;font-weight:800}
+        .rank-down{color:#f87171;font-size:.7rem;display:flex;flex-direction:column;align-items:center;font-weight:800}
+        .rank-same{color:#64748b;font-size:1rem;font-weight:800}
+        #tutorialOverlay{position:fixed;inset:0;background:rgba(2,6,23,.92);backdrop-filter:blur(8px);z-index:100;align-items:center;justify-content:center}
+        #tutorialOverlay:not(.hidden){display:flex}
+        .tutorial-dot{width:8px;height:8px;border-radius:50%;background:#334155;transition:all .3s}
+        .tutorial-dot.active{background:#6366f1;width:20px;border-radius:4px}
+        .tutorial-step{display:none}
+        .tutorial-step.active{display:block}
+        #accountModal{position:fixed;inset:0;background:rgba(2,6,23,.95);backdrop-filter:blur(16px);z-index:80}
+        .lb-row{transition:all .2s}
+        .lb-row:hover{background:rgba(99,102,241,.08)}
+        .lb-gold{border-left:3px solid #f59e0b}
+        .lb-silver{border-left:3px solid #94a3b8}
+        .lb-bronze{border-left:3px solid #b45309}
+        .stat-bar-track{height:6px;background:rgba(255,255,255,.05);border-radius:99px;overflow:hidden}
+        .stat-bar-fill{height:100%;border-radius:99px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+        .captain-badge{color:#ef4444;font-weight:900}
+        .avatar-upload{cursor:pointer;position:relative}
+        .avatar-upload:hover .avatar-overlay{opacity:1}
+        .avatar-overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);border-radius:inherit;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+        .cq-bar{height:8px;border-radius:99px;background:linear-gradient(to right,#ef4444,#f97316,#eab308,#22c55e,#3b82f6,#a855f7)}
+        .cq-needle{position:absolute;top:-4px;width:4px;height:16px;background:white;border-radius:2px;transform:translateX(-50%);box-shadow:0 0 6px rgba(255,255,255,.8);transition:left 1.2s cubic-bezier(.4,0,.2,1)}
+    </style>
 </head>
 <body class="p-4 md:p-10">
-
-    <div class="max-w-7xl mx-auto">
-        <header class="flex flex-col xl:flex-row justify-between items-center mb-10 gap-6">
-            <div class="text-center xl:text-left">
-                <h1 class="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">ContentRate <span class="text-white">Manager</span></h1>
-                <p class="text-slate-500 font-medium">Describing content with numbers.</p>
-            </div>
-
-            <div class="glass-card px-6 py-3 rounded-2xl flex flex-wrap justify-center items-center gap-6 border border-amber-500/20 shadow-lg shadow-amber-900/10">
-                <div class="flex flex-col items-end">
-                    <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Current CP</span>
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="coins" class="w-5 h-5 text-amber-400 fill-amber-400"></i>
-                        <span id="walletBalance" class="text-2xl font-black text-white">100</span>
-                    </div>
-                </div>
-                <div class="h-8 w-px bg-slate-700"></div>
-                <div class="flex flex-col items-end">
-                    <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Net Worth</span>
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="briefcase" class="w-4 h-4 text-emerald-400"></i>
-                        <span id="netWorth" class="text-xl font-bold text-emerald-400">--</span>
-                    </div>
-                </div>
-                <div class="h-8 w-px bg-slate-700"></div>
-                <div class="flex flex-col items-center">
-                    <span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Roster</span>
-                    <span id="rosterCount" class="text-xl font-black text-indigo-400">0/4</span>
-                </div>
-                <div class="h-8 w-px bg-slate-700"></div>
-                <div class="flex gap-2">
-                    <button onclick="collectRewards()" id="collectBtn" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition border border-amber-500/50 flex items-center gap-2">
-                        <i data-lucide="play-circle" class="w-4 h-4"></i> 
-                        <span id="collectBtnText">Run Daily Match</span>
-                    </button>
-                    <button onclick="resetAccount()" class="text-slate-600 hover:text-red-400 p-2 transition" title="Reset Career">
-                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                    </button>
-                    <button onclick="openTutorial()" class="text-slate-600 hover:text-yellow-400 p-2 transition" title="Tutorial">
-                        <i data-lucide="lightbulb" class="w-4 h-4"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-4">
-                <div class="relative hidden md:block">
-                    <input type="text" id="searchInput" oninput="renderLeaderboard()" placeholder="Scout talent..." class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 transition w-48 text-white">
-                </div>
-                <button onclick="openAccountModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 transition flex items-center gap-2 text-sm font-bold border border-slate-700 hover:border-indigo-500/50">
-                    <i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i>
-                    <span class="hidden sm:inline text-slate-300">Leaderboard</span>
-                </button>
-                <button onclick="toggleCompareMode()" id="compareBtn" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition flex items-center gap-2 text-sm font-bold shadow-lg shadow-indigo-500/20">
-                    <i data-lucide="swords" class="w-4 h-4"></i> Compare
-                </button>
-            </div>
-        </header>
-
-        <div id="loading-state" class="flex flex-col items-center justify-center py-20">
-            <div class="loading-spinner mb-4"></div>
-            <p class="text-slate-500 font-bold animate-pulse">SCOUTING DATABASE...</p>
+<div class="max-w-7xl mx-auto">
+    <header class="flex flex-col xl:flex-row justify-between items-center mb-8 gap-6">
+        <div class="text-center xl:text-left">
+            <h1 class="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-violet-400 to-cyan-400">ContentRate <span class="text-white">4</span></h1>
+            <p class="text-slate-500 font-medium text-sm">Describing content with numbers.</p>
         </div>
-
-        <main id="view-container" class="hidden"></main>
-    </div>
-
-    <!-- ===== TUTORIAL OVERLAY ===== -->
-    <div id="tutorialOverlay" class="hidden">
-        <div class="tutorial-card bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg mx-4 p-8 shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <span class="text-[10px] font-black uppercase tracking-widest text-indigo-400">ContentRate Manager</span>
-                <button onclick="closeTutorial()" class="text-slate-500 hover:text-white transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <div class="glass-card px-6 py-3 rounded-2xl flex flex-wrap justify-center items-center gap-5 border border-amber-500/20 shadow-lg">
+            <div class="flex flex-col items-end"><span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">CP Balance</span><div class="flex items-center gap-1.5"><i data-lucide="coins" class="w-4 h-4 text-amber-400 fill-amber-400"></i><span id="walletBalance" class="text-2xl font-black text-white">100</span></div></div>
+            <div class="h-8 w-px bg-slate-700"></div>
+            <div class="flex flex-col items-end"><span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Net Worth</span><div class="flex items-center gap-1.5"><i data-lucide="briefcase" class="w-4 h-4 text-emerald-400"></i><span id="netWorth" class="text-xl font-bold text-emerald-400">--</span></div></div>
+            <div class="h-8 w-px bg-slate-700"></div>
+            <div class="flex flex-col items-center"><span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Roster</span><span id="rosterCount" class="text-xl font-black text-indigo-400">0/4</span></div>
+            <div class="h-8 w-px bg-slate-700"></div>
+            <div class="flex gap-2">
+                <button onclick="collectRewards()" id="collectBtn" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition border border-amber-500/50 flex items-center gap-2"><i data-lucide="play-circle" class="w-4 h-4"></i><span id="collectBtnText">Run Daily Match</span></button>
+                <button onclick="resetAccount()" class="text-slate-600 hover:text-red-400 p-2 transition" title="Reset Career"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
+                <button onclick="openTutorial()" class="text-slate-600 hover:text-yellow-400 p-2 transition" title="Tutorial"><i data-lucide="lightbulb" class="w-4 h-4"></i></button>
             </div>
-
-            <!-- Steps -->
-            <div id="tutStep0" class="tutorial-step active">
-                <div class="text-5xl mb-4">👋</div>
-                <h2 class="text-2xl font-black text-white mb-3">Welcome to ContentRate Manager</h2>
-                <p class="text-slate-400 leading-relaxed">This is a fantasy-style investing game built around real content creator scores. You'll build a roster, run daily matches, and grow your CP (ContentPoints) balance.</p>
-            </div>
-            <div id="tutStep1" class="tutorial-step">
-                <div class="text-5xl mb-4">📊</div>
-                <h2 class="text-2xl font-black text-white mb-3">The Leaderboard</h2>
-                <p class="text-slate-400 leading-relaxed">Browse all creators ranked by their 14-day average score. Each card shows their current form, trend, and recruitment cost. Click a card to see their full profile and match history.</p>
-            </div>
-            <div id="tutStep2" class="tutorial-step">
-                <div class="text-5xl mb-4">⭐</div>
-                <h2 class="text-2xl font-black text-white mb-3">What's the Star?</h2>
-                <p class="text-slate-400 leading-relaxed">A <span class="text-yellow-400 font-bold">★ gold star</span> means that creator had the highest score out of everyone on that particular day. It's a daily "best performer" badge — a creator can earn multiple stars across different days.</p>
-            </div>
-            <div id="tutStep3" class="tutorial-step">
-                <div class="text-5xl mb-4">👑</div>
-                <h2 class="text-2xl font-black text-white mb-3">What's the Crown?</h2>
-                <p class="text-slate-400 leading-relaxed">The <span class="text-amber-400 font-bold">👑 crown</span> marks the current <strong class="text-white">King</strong> — whoever has the best form right now based on their last 5 scores. Only one creator holds the crown at a time, and it changes as scores update.</p>
-            </div>
-            <div id="tutStep4" class="tutorial-step">
-                <div class="text-5xl mb-4">🔢</div>
-                <h2 class="text-2xl font-black text-white mb-3">Form Points Explained</h2>
-                <p class="text-slate-400 leading-relaxed mb-3">Form Points are calculated from a creator's last 5 scores using their colour band:</p>
-                <div class="grid grid-cols-2 gap-1.5 text-xs font-bold">
-                    <div class="flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 rounded-lg px-3 py-1.5"><span class="text-purple-400">Purple (≥9.0)</span><span class="ml-auto text-white">+4</span></div>
-                    <div class="flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 rounded-lg px-3 py-1.5"><span class="text-blue-400">Blue (8.0–8.99)</span><span class="ml-auto text-white">+2</span></div>
-                    <div class="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-1.5"><span class="text-green-400">Green (7.0–7.99)</span><span class="ml-auto text-white">+1</span></div>
-                    <div class="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-1.5"><span class="text-yellow-400">Yellow (6.5–6.99)</span><span class="ml-auto text-white">0</span></div>
-                    <div class="flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 rounded-lg px-3 py-1.5"><span class="text-orange-400">Orange (6.0–6.49)</span><span class="ml-auto text-white">−1</span></div>
-                    <div class="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-1.5"><span class="text-red-400">Red (&lt;6.0)</span><span class="ml-auto text-white">−2</span></div>
+        </div>
+        <div class="flex items-center gap-3">
+            <input type="text" id="searchInput" oninput="renderLeaderboard()" placeholder="Scout talent..." class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 transition w-44 text-white hidden md:block">
+            <button onclick="openAccountModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 transition flex items-center gap-2 text-sm font-bold border border-slate-700 hover:border-indigo-500/50"><i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i><span class="hidden sm:inline text-slate-300">Leaderboard</span></button>
+            <button onclick="toggleCompareMode()" id="compareBtn" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition flex items-center gap-2 text-sm font-bold shadow-lg shadow-indigo-500/20"><i data-lucide="swords" class="w-4 h-4"></i> Compare</button>
+        </div>
+    </header>
+    <div id="loading-state" class="flex flex-col items-center justify-center py-20"><div class="loading-spinner mb-4"></div><p class="text-slate-500 font-bold animate-pulse tracking-widest uppercase text-sm">Scouting Database...</p></div>
+    <main id="view-container" class="hidden"></main>
+    <div id="cqSection" class="hidden mt-10">
+        <div class="glass-card rounded-3xl p-6 border border-slate-700/50">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                <div class="flex items-center gap-4 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0"><i data-lucide="trending-up" class="w-5 h-5"></i></div>
+                    <div><div class="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-0.5">Creator of the Day</div><div id="fotdName" class="text-base font-black text-white">—</div><div id="fotdScore" class="text-xs text-slate-400 font-bold"></div></div>
                 </div>
-            </div>
-            <div id="tutStep5" class="tutorial-step">
-                <div class="text-5xl mb-4">🤝</div>
-                <h2 class="text-2xl font-black text-white mb-3">Recruit Your Roster</h2>
-                <p class="text-slate-400 leading-relaxed">Spend CP to recruit creators (up to 4 slots). Higher-rated creators cost more but earn bigger rewards. You can release them anytime to recoup their value.</p>
-            </div>
-            <div id="tutStep6" class="tutorial-step">
-                <div class="text-5xl mb-4">🏆</div>
-                <h2 class="text-2xl font-black text-white mb-3">Run Daily Matches</h2>
-                <p class="text-slate-400 leading-relaxed">Hit <strong class="text-amber-400">Run Daily Match</strong> once per day. Your creators' latest scores determine your payout. A score ≥9.0 is a jackpot, ≥8.0 earns profit, and &lt;6.5 is a penalty.</p>
-            </div>
-            <div id="tutStep7" class="tutorial-step">
-                <div class="text-5xl mb-4">🥇</div>
-                <h2 class="text-2xl font-black text-white mb-3">Global Leaderboard & Compare</h2>
-                <p class="text-slate-400 leading-relaxed">Create an account to appear on the <strong class="text-amber-400">global leaderboard</strong> — your net worth is ranked against all other managers and others can see your roster. Use <strong class="text-indigo-400">Compare</strong> for a deep head-to-head breakdown of any two creators.</p>
-            </div>
-
-            <!-- Nav -->
-            <div class="flex items-center justify-between mt-8">
-                <div class="flex gap-2" id="tutDots"></div>
-                <div class="flex gap-3">
-                    <button onclick="tutPrev()" id="tutPrevBtn" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 text-sm font-bold transition hidden">Back</button>
-                    <button onclick="tutNext()" id="tutNextBtn" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition">Next →</button>
+                <div class="text-center px-4">
+                    <div class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Current Content Quality</div>
+                    <div id="cqScore" class="text-5xl font-black mb-3">—</div>
+                    <div class="relative h-2 mb-1"><div class="cq-bar w-full h-full"></div><div id="cqNeedle" class="cq-needle" style="left:50%"></div></div>
+                    <div class="flex justify-between text-[9px] text-slate-600 font-bold mt-1"><span>5.0</span><span>6.0</span><span>7.0</span><span>8.0</span><span>9.0</span><span>10</span></div>
+                    <div class="text-[10px] text-slate-600 font-bold mt-2">Average of today's scores across all creators</div>
+                </div>
+                <div class="flex items-center gap-4 p-4 rounded-2xl bg-red-500/5 border border-red-500/20 md:justify-end">
+                    <div><div class="text-[10px] font-black uppercase tracking-widest text-red-500 mb-0.5 text-right">Worst of the Day</div><div id="wotdName" class="text-base font-black text-white text-right">—</div><div id="wotdScore" class="text-xs text-slate-400 font-bold text-right"></div></div>
+                    <div class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center text-red-400 shrink-0"><i data-lucide="trending-down" class="w-5 h-5"></i></div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- ===== ACCOUNT / GLOBAL LEADERBOARD MODAL ===== -->
-    <div id="accountModal" class="hidden flex flex-col">
-        <div class="max-w-4xl w-full mx-auto p-4 md:p-8 flex flex-col h-full overflow-y-auto">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-2xl font-black text-white flex items-center gap-3"><i data-lucide="trophy" class="w-6 h-6 text-amber-400"></i> Global Manager Leaderboard</h2>
-                <div class="flex items-center gap-2">
-                    <button onclick="toggleAdminMode()" id="adminToggleBtn" class="p-2 rounded-lg text-slate-700 hover:text-slate-400 transition" title="Admin">
-                        <i data-lucide="shield" class="w-4 h-4"></i>
-                    </button>
-                    <button onclick="closeAccountModal()" class="p-2 hover:bg-slate-800 rounded-full transition text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-                </div>
-            </div>
-
-            <!-- Auth / Profile panel -->
-            <div id="accountPanel" class="glass-card p-6 rounded-2xl mb-6"></div>
-
-            <!-- Leaderboard table -->
-            <div class="glass-card rounded-2xl overflow-hidden">
-                <div class="p-5 border-b border-slate-800 flex items-center justify-between">
-                    <span class="text-xs font-black uppercase tracking-widest text-slate-400">All Managers</span>
-                    <span id="lbLastUpdated" class="text-[10px] text-slate-600"></span>
-                </div>
-                <div id="globalLbList" class="divide-y divide-slate-800/60 max-h-[50vh] overflow-y-auto custom-scroll">
-                    <div class="p-8 text-center text-slate-500 font-bold text-sm">Loading leaderboard...</div>
-                </div>
-            </div>
+</div>
+<div id="tutorialOverlay" class="hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg mx-4 p-8 shadow-2xl animate-slide-up">
+        <div class="flex justify-between items-center mb-6"><span class="text-[10px] font-black uppercase tracking-widest text-indigo-400">ContentRate 4</span><button onclick="closeTutorial()" class="text-slate-500 hover:text-white transition"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+        <div id="tutStep0" class="tutorial-step active"><div class="text-5xl mb-4">👋</div><h2 class="text-2xl font-black text-white mb-3">Welcome to ContentRate 4</h2><p class="text-slate-400 leading-relaxed">A fantasy investing game built around real content creator scores. Build a roster, run daily matches, and grow your CP (ContentPoints) balance.</p></div>
+        <div id="tutStep1" class="tutorial-step"><div class="text-5xl mb-4">📊</div><h2 class="text-2xl font-black text-white mb-3">The Leaderboard</h2><p class="text-slate-400 leading-relaxed">Browse all creators ranked by their 14-day average score. Click a card to see their full profile and match history. Recruit up to 4 at once.</p></div>
+        <div id="tutStep2" class="tutorial-step"><div class="text-5xl mb-4">⭐</div><h2 class="text-2xl font-black text-white mb-3">Stars &amp; the Crown</h2><p class="text-slate-400 leading-relaxed">A <span class="text-yellow-400 font-bold">gold star</span> means highest score of the day. The <span class="text-amber-400 font-bold">crown</span> marks the current King — whoever has the best form over their last 5 scores.</p></div>
+        <div id="tutStep3" class="tutorial-step"><div class="text-5xl mb-4">🔢</div><h2 class="text-2xl font-black text-white mb-3">Form Points</h2><p class="text-slate-400 leading-relaxed mb-3">Calculated from a creator's last 5 scores by colour band:</p><div class="grid grid-cols-2 gap-1.5 text-xs font-bold"><div class="flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 rounded-lg px-3 py-1.5"><span class="text-purple-400">Purple ≥9.0</span><span class="ml-auto text-white">+4</span></div><div class="flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 rounded-lg px-3 py-1.5"><span class="text-blue-400">Blue 8.0–8.99</span><span class="ml-auto text-white">+2</span></div><div class="flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-1.5"><span class="text-green-400">Green 7.0–7.99</span><span class="ml-auto text-white">+1</span></div><div class="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-1.5"><span class="text-yellow-400">Yellow 6.5–6.99</span><span class="ml-auto text-white">0</span></div><div class="flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 rounded-lg px-3 py-1.5"><span class="text-orange-400">Orange 6.0–6.49</span><span class="ml-auto text-white">−1</span></div><div class="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-1.5"><span class="text-red-400">Red &lt;6.0</span><span class="ml-auto text-white">−2</span></div></div></div>
+        <div id="tutStep4" class="tutorial-step"><div class="text-5xl mb-4">💰</div><h2 class="text-2xl font-black text-white mb-3">How CP is Calculated</h2><p class="text-slate-400 leading-relaxed mb-4">When you hit <span class="text-amber-400 font-bold">Run Daily Match</span>, each farmer earns or costs CP based on their latest score:</p><div class="space-y-2 text-sm"><div class="flex items-center justify-between p-3 rounded-xl bg-purple-500/10 border border-purple-500/20"><span class="text-purple-300 font-bold">Score ≥ 9.0 — Jackpot</span><span class="text-white font-black">+40 CP</span></div><div class="flex items-center justify-between p-3 rounded-xl bg-blue-500/10 border border-blue-500/20"><span class="text-blue-300 font-bold">Score ≥ 8.0 — Profit</span><span class="text-white font-black">+20 CP</span></div><div class="flex items-center justify-between p-3 rounded-xl bg-green-500/10 border border-green-500/20"><span class="text-green-300 font-bold">Score 7.0–7.99 — Partial</span><span class="text-white font-black">up to +15 CP</span></div><div class="flex items-center justify-between p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20"><span class="text-yellow-300 font-bold">Score 6.5–6.99 — Break even</span><span class="text-white font-black">0 CP</span></div><div class="flex items-center justify-between p-3 rounded-xl bg-red-500/10 border border-red-500/20"><span class="text-red-300 font-bold">Score &lt; 6.5 — Penalty</span><span class="text-white font-black">−15 CP</span></div></div><p class="text-slate-500 text-xs mt-3">Captain <span class="text-red-400 font-bold">(C)</span> earns double rewards but also double penalties!</p></div>
+        <div id="tutStep5" class="tutorial-step"><div class="text-5xl mb-4">🎖️</div><h2 class="text-2xl font-black text-white mb-3">The Captain</h2><p class="text-slate-400 leading-relaxed">Assign one farmer as your <span class="text-red-400 font-bold">Captain (C)</span> from their profile. Their rewards and penalties are both doubled. In the global leaderboard, captains appear with a red <span class="text-red-400 font-bold">(C)</span> next to their name. Choose wisely!</p></div>
+        <div id="tutStep6" class="tutorial-step"><div class="text-5xl mb-4">🤝</div><h2 class="text-2xl font-black text-white mb-3">Recruit Your Roster</h2><p class="text-slate-400 leading-relaxed">Spend CP to recruit up to 4 creators. Releasing a farmer only returns <span class="text-amber-400 font-bold">50% of their value</span> — so choose carefully. Higher-rated creators cost more but can earn more too.</p></div>
+        <div id="tutStep7" class="tutorial-step"><div class="text-5xl mb-4">📉</div><h2 class="text-2xl font-black text-white mb-3">Current Content Quality</h2><p class="text-slate-400 leading-relaxed">At the bottom of the screen, a live gauge shows the <span class="text-indigo-400 font-bold">Current Content Quality</span> — the average of all creators' most recent scores. It also shows who had the best and worst score of the day.</p></div>
+        <div id="tutStep8" class="tutorial-step"><div class="text-5xl mb-4">🥇</div><h2 class="text-2xl font-black text-white mb-3">Leaderboard &amp; Compare</h2><p class="text-slate-400 leading-relaxed">Create an account to appear on the <span class="text-amber-400 font-bold">global leaderboard</span> and add a profile picture. Use <span class="text-indigo-400 font-bold">Compare</span> for a deep head-to-head breakdown including score momentum, leaderboard positions, valuation history and attribute DNA.</p></div>
+        <div class="flex items-center justify-between mt-8">
+            <div class="flex gap-2" id="tutDots"></div>
+            <div class="flex gap-3"><button onclick="tutPrev()" id="tutPrevBtn" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 text-sm font-bold transition hidden">Back</button><button onclick="tutNext()" id="tutNextBtn" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition">Next →</button></div>
         </div>
     </div>
-
-    <div id="compareModal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-6xl rounded-3xl overflow-y-auto max-h-[95vh] shadow-2xl custom-scroll relative">
-            <div class="sticky top-0 bg-slate-900/90 backdrop-blur-md p-6 border-b border-slate-800 flex justify-between items-center z-20">
-                <h2 class="text-xl font-bold flex items-center gap-2 text-indigo-400">Head-to-Head Analysis</h2>
-                <button onclick="toggleCompareMode()" class="p-2 hover:bg-slate-800 rounded-full transition"><i data-lucide="x"></i></button>
-            </div>
-            <div class="p-8" id="compareContent"></div>
+</div>
+<div id="accountModal" class="hidden flex flex-col">
+    <div class="max-w-4xl w-full mx-auto p-4 md:p-8 flex flex-col h-full overflow-y-auto">
+        <div class="flex justify-between items-center mb-8"><h2 class="text-2xl font-black text-white flex items-center gap-3"><i data-lucide="trophy" class="w-6 h-6 text-amber-400"></i> Global Manager Leaderboard</h2><div class="flex items-center gap-2"><button onclick="toggleAdminMode()" id="adminToggleBtn" class="p-2 rounded-lg text-slate-700 hover:text-slate-400 transition" title="Admin"><i data-lucide="shield" class="w-4 h-4"></i></button><button onclick="closeAccountModal()" class="p-2 hover:bg-slate-800 rounded-full transition text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button></div></div>
+        <div id="accountPanel" class="glass-card p-6 rounded-2xl mb-6"></div>
+        <div class="glass-card rounded-2xl overflow-hidden">
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between"><span class="text-xs font-black uppercase tracking-widest text-slate-400">All Managers</span><span id="lbLastUpdated" class="text-[10px] text-slate-600"></span></div>
+            <div id="globalLbList" class="divide-y divide-slate-800/60 max-h-[50vh] overflow-y-auto custom-scroll"><div class="p-8 text-center text-slate-500 font-bold text-sm">Loading...</div></div>
         </div>
     </div>
-
-    <div id="toast" class="fixed bottom-10 right-10 bg-slate-800 border border-slate-700 text-white px-6 py-4 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-bold flex items-center gap-3">
-        <span id="toastMsg">Notification</span>
+</div>
+<div id="compareModal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-6xl rounded-3xl overflow-y-auto max-h-[95vh] shadow-2xl custom-scroll relative">
+        <div class="sticky top-0 bg-slate-900/90 backdrop-blur-md p-6 border-b border-slate-800 flex justify-between items-center z-20"><h2 class="text-xl font-bold flex items-center gap-2 text-indigo-400"><i data-lucide="swords" class="w-5 h-5"></i> Head-to-Head Analysis</h2><button onclick="toggleCompareMode()" class="p-2 hover:bg-slate-800 rounded-full transition"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+        <div class="p-8" id="compareContent"></div>
     </div>
-
-    <script>
-        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSMTqwP3ViGcOKh0lYRGL9rdAL-Q84U85iZSLTqwdT3OGXKhMvIsI-pNC_cbRjcod0teMJ7YbRXREhy/pub?gid=607342177&single=true&output=csv';
-        const MAX_ROSTER_SIZE = 4;
-
-        let processedFarmers = [];
-        let compareSelection = [];
-        let dailyBestScores = {};
-        let cooldownTimerInterval;
-        
-        let wallet = {
-            balance: 100,
-            roster: [],
-            lastMatchDate: null
-        };
-
-        function getHexColor(score) {
-            if (score <= 5.99) return '#ef4444';
-            if (score <= 6.49) return '#f97316';
-            if (score <= 6.99) return '#eab308';
-            if (score <= 7.99) return '#22c55e';
-            if (score <= 8.99) return '#3b82f6';
-            return '#a855f7';
-        }
-
-        function getTailwindColor(score) {
-            if (score <= 5.99) return 'text-red-500';
-            if (score <= 6.49) return 'text-orange-500';
-            if (score <= 6.99) return 'text-yellow-500';
-            if (score <= 7.99) return 'text-green-500';
-            if (score <= 8.99) return 'text-blue-500';
-            return 'text-purple-500';
-        }
-
-        function getScoreBgColor(score) {
-            if (score <= 5.99) return 'bg-red-500';
-            if (score <= 6.49) return 'bg-orange-500';
-            if (score <= 6.99) return 'bg-yellow-500';
-            if (score <= 7.99) return 'bg-emerald-500';
-            if (score <= 8.99) return 'bg-blue-500';
-            return 'bg-purple-500';
-        }
-
-        function showToast(msg, type = 'neutral') {
-            const toast = document.getElementById('toast');
-            const msgEl = document.getElementById('toastMsg');
-            msgEl.innerHTML = msg;
-            
-            let color = 'border-slate-700';
-            if(type === 'success') color = 'border-emerald-500 text-emerald-400';
-            if(type === 'error') color = 'border-red-500 text-red-400';
-            if(type === 'gold') color = 'border-amber-500 text-amber-400';
-            
-            toast.className = `fixed bottom-10 right-10 bg-slate-900 border ${color} px-6 py-4 rounded-xl shadow-2xl transform translate-y-0 opacity-100 transition-all duration-300 z-50 font-bold flex items-center gap-3`;
-            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
-        }
-
-        // --- DATA PROTECTION INIT ---
-        async function init() {
-            loadAccountUser();
-
-            // Show tutorial on first ever visit
-            if (!localStorage.getItem('cr_tutorial_done')) {
-                openTutorial();
-            }
-
-            // Check for the NEW key logic first
-            let savedWallet = localStorage.getItem('cp_manager_king_v1');
-            
-            // If new key doesn't exist, check for the OLD key (Migration)
-            if (!savedWallet) {
-                savedWallet = localStorage.getItem('cp_manager_save_v5_safezone'); 
-            }
-
-            if (savedWallet) {
-                wallet = JSON.parse(savedWallet);
-            }
-
-            try {
-                const response = await fetch(SHEET_URL);
-                const csvData = await response.text();
-                Papa.parse(csvData, {
-                    header: true,
-                    dynamicTyping: true,
-                    complete: (results) => { processSheetData(results.data); }
-                });
-            } catch (error) {
-                document.getElementById('loading-state').innerHTML = `<p class="text-red-400 font-bold">Connection Failed.</p>`;
-            }
-        }
-
-        function processSheetData(rows) {
-            const farmersMap = {};
-
-            rows.forEach(row => {
-                if (!row.Name) return;
-                if (!farmersMap[row.Name]) {
-                    farmersMap[row.Name] = {
-                        id: row.Name.toLowerCase().replace(/\s/g, '-'),
-                        name: row.Name,
-                        scores: [],
-                        attributes: { creativity: row.Creativity || 70, consistency: row.Consistency || 70, attendance: row.Attendance || 70, presence: row.Presence || 70, quality: row.Quality || 70 }
-                    };
-                }
-                farmersMap[row.Name].scores.push({ date: row.Date, score: parseFloat(row.Score) });
-                if (!dailyBestScores[row.Date] || row.Score > dailyBestScores[row.Date]) {
-                    dailyBestScores[row.Date] = row.Score;
-                }
-            });
-
-            // 1. Process Basic Stats
-            let tempFarmers = Object.values(farmersMap).map(f => {
-                f.scores.sort((a, b) => new Date(b.date) - new Date(a.date));
-                const recentScores = f.scores.slice(0, 14);
-                const avg = recentScores.reduce((a, b) => a + b.score, 0) / recentScores.length;
-                
-                // Calculate PREVIOUS Average (Rolling) for rank change detection
-                const prevScores = f.scores.slice(1, 15);
-                const prevAvg = prevScores.length > 0 ? prevScores.reduce((a, b) => a + b.score, 0) / prevScores.length : avg;
-                
-                const currentAvg = parseFloat(avg.toFixed(2));
-                const prevAvgFixed = parseFloat(prevAvg.toFixed(2));
-                
-                // Form Points (Last 5 Scores — based on score colour bands)
-                // Purple ≥9.0: +4 | Blue 8.0–8.99: +2 | Green 7.0–7.99: +1
-                // Yellow 6.5–6.99: 0 | Orange 6.0–6.49: -1 | Red <6.0: -2
-                const last5 = f.scores.slice(0, 5);
-                const last5Avg = last5.reduce((a,b)=>a+b.score,0) / last5.length;
-                let formPoints = 0;
-                last5.forEach(s => {
-                    if (s.score >= 9.0)       formPoints += 4;  // purple
-                    else if (s.score >= 8.0)  formPoints += 2;  // blue
-                    else if (s.score >= 7.0)  formPoints += 1;  // green
-                    else if (s.score >= 6.5)  formPoints += 0;  // yellow
-                    else if (s.score >= 6.0)  formPoints -= 1;  // orange
-                    else                      formPoints -= 2;  // red
-                });
-
-                // Calculate Star Count
-                let starCount = 0;
-                f.scores.forEach(s => {
-                    if(dailyBestScores[s.date] && s.score >= dailyBestScores[s.date]) {
-                        starCount++;
-                    }
-                });
-
-                // Calculate Profit Rate (Percentage of games with profit > 0)
-                // Profit threshold is 7.0 score based on standard rules
-                const profitGames = recentScores.filter(s => s.score >= 7.0).length;
-                const profitRate = Math.round((profitGames / recentScores.length) * 100);
-
-                // Rolling History for Charts
-                let rollingHistory = [];
-                for(let i=0; i<5; i++) {
-                    const slice = f.scores.slice(i, i+14);
-                    if(slice.length > 0) rollingHistory.push(parseFloat((slice.reduce((a, b) => a + b.score, 0) / slice.length).toFixed(2)));
-                    else rollingHistory.push(null);
-                }
-
-                return {
-                    ...f,
-                    currentAvg, prevAvg: prevAvgFixed, formPoints, last5Avg, 
-                    trend: avg > prevAvg ? 'up' : avg < prevAvg ? 'down' : 'equal',
-                    grade: calculateGrade(avg),
-                    stats: { 
-                        best14: Math.max(...recentScores.map(s=>s.score)), 
-                        worst14: Math.min(...recentScores.map(s=>s.score)), 
-                        rollingHistory,
-                        starCount,
-                        profitRate
-                    },
-                    isKing: false
-                };
-            });
-
-            // 2. Determine "The King" (Best Farmer Logic)
-            const kingSort = [...tempFarmers].sort((a, b) => {
-                if (b.formPoints !== a.formPoints) return b.formPoints - a.formPoints;
-                if (b.last5Avg !== a.last5Avg) return b.last5Avg - a.last5Avg;
-                return a.name.localeCompare(b.name);
-            });
-            if(kingSort.length > 0) {
-                const kingID = kingSort[0].id;
-                const kingRef = tempFarmers.find(f => f.id === kingID);
-                if(kingRef) kingRef.isKing = true;
-            }
-
-            // 3. Determine Rank Changes
-            tempFarmers.sort((a, b) => b.currentAvg - a.currentAvg);
-            const prevRankList = [...tempFarmers].sort((a, b) => b.prevAvg - a.prevAvg);
-            
-            tempFarmers.forEach((f, index) => {
-                const currentRank = index;
-                const prevRank = prevRankList.findIndex(x => x.id === f.id);
-                f.rankChange = prevRank - currentRank; 
-            });
-
-            // 4. Calculate Prices (STRICT FORMULA, NO FIXING)
-            tempFarmers.forEach(f => {
-                const basePrice = Math.max(10, Math.floor((f.currentAvg - 6.0) * 40));
-                let multiplier = 1.0;
-                if (f.isKing) multiplier = 1.2; 
-                f.price = Math.floor(basePrice * multiplier);
-            });
-
-            processedFarmers = tempFarmers;
-            updateHUD();
-            startCooldownTimer();
-            document.getElementById('loading-state').classList.add('hidden');
-            document.getElementById('view-container').classList.remove('hidden');
-            renderLeaderboard();
-        }
-
-        function calculateGrade(score) {
-            if (score >= 8.0) return { label: 'S-Tier', color: 'bg-purple-500/10 text-purple-400 border-purple-500/30' };
-            if (score >= 7.5) return { label: 'A-Tier', color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30' };
-            if (score >= 6.5) return { label: 'B-Tier', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' };
-            return { label: 'C-Tier', color: 'bg-slate-500/10 text-slate-400 border-slate-500/30' };
-        }
-
-        function updateHUD() {
-            document.getElementById('walletBalance').innerText = wallet.balance.toFixed(0);
-            const rosterEl = document.getElementById('rosterCount');
-            rosterEl.innerText = `${wallet.roster.length}/${MAX_ROSTER_SIZE}`;
-            rosterEl.className = wallet.roster.length >= MAX_ROSTER_SIZE ? 'text-xl font-black text-red-400' : 'text-xl font-black text-indigo-400';
-            let assetValue = 0;
-            wallet.roster.forEach(id => { const f = processedFarmers.find(x => x.id === id); if (f) assetValue += f.price; });
-            document.getElementById('netWorth').innerText = (wallet.balance + assetValue).toFixed(0);
-            localStorage.setItem('cp_manager_king_v1', JSON.stringify(wallet));
-        }
-
-        function resetAccount() {
-            if(confirm("Are you sure? This will wipe your team and reset CP to 100.")) {
-                localStorage.removeItem('cp_manager_king_v1');
-                localStorage.removeItem('cp_manager_save_v5_safezone'); 
-                location.reload();
-            }
-        }
-
-        function startCooldownTimer() {
-            if(cooldownTimerInterval) clearInterval(cooldownTimerInterval);
-            const checkTimer = () => {
-                const latestScoreDate = processedFarmers.length > 0 ? processedFarmers[0].scores[0]?.date : null;
-                const btn = document.getElementById('collectBtn');
-                const btnText = document.getElementById('collectBtnText');
-                const alreadyPlayed = wallet.lastMatchDate && latestScoreDate && wallet.lastMatchDate === latestScoreDate;
-                if (alreadyPlayed) {
-                    btn.classList.add('btn-disabled');
-                    btnText.innerText = 'Played ✓';
-                } else {
-                    btn.classList.remove('btn-disabled');
-                    btnText.innerText = 'Run Daily Match';
-                }
-            };
-            checkTimer();
-            cooldownTimerInterval = setInterval(checkTimer, 30000);
-        }
-
-        function handleRecruit(farmerId) {
-            const farmer = processedFarmers.find(f => f.id === farmerId);
-            const isOwned = wallet.roster.includes(farmerId);
-            if (isOwned) {
-                wallet.balance += farmer.price;
-                wallet.roster = wallet.roster.filter(id => id !== farmerId);
-                showToast(`Sold ${farmer.name} for ${farmer.price} CP`, "neutral");
-            } else {
-                if (wallet.roster.length >= MAX_ROSTER_SIZE) return showToast(`Roster Full`, "error");
-                if (wallet.balance < farmer.price) return showToast(`Insufficient CP`, "error");
-                wallet.balance -= farmer.price;
-                wallet.roster.push(farmerId);
-                showToast(`Recruited ${farmer.name}!`, "gold");
-            }
-            updateHUD();
-            if(document.getElementById('searchInput')) renderLeaderboard();
-            const profileHeader = document.querySelector('#view-container h2');
-            if(profileHeader && profileHeader.innerText.includes(farmer.name)) renderProfile(farmerId);
-        }
-
-        function collectRewards() {
-            const latestScoreDate = processedFarmers.length > 0 ? processedFarmers[0].scores[0]?.date : null;
-            if (wallet.lastMatchDate && wallet.lastMatchDate === latestScoreDate) return showToast("Already played this round.", "error");
-            if (wallet.roster.length === 0) return showToast("Recruit players first!", "neutral");
-            
-            let totalChange = 0;
-            wallet.roster.forEach(id => {
-                const f = processedFarmers.find(x => x.id === id);
-                if (f && f.scores.length > 0) {
-                    const score = f.scores[0].score;
-                    if (score >= 9.0) totalChange += 40;
-                    else if (score >= 8.0) totalChange += 20;
-                    else if (score >= 7.0) totalChange += (score - 7.0) * 15;
-                    else if (score < 6.5) totalChange -= 15;
-                }
-            });
-            wallet.balance += totalChange;
-            if(wallet.balance < 0) wallet.balance = 0;
-            wallet.lastMatchDate = latestScoreDate;
-            updateHUD();
-            startCooldownTimer();
-            const emoji = totalChange >= 50 ? '🚀' : (totalChange >= 0 ? '🤑' : '📉');
-            showToast(`${emoji} Matchday: ${totalChange >= 0 ? '+' : ''}${totalChange.toFixed(1)} CP`, totalChange >= 0 ? 'gold' : 'error');
-            // Auto-publish score to leaderboard after each match
-            silentPublish();
-        }
-
-        function getRankArrow(change) {
-            if (change > 0) return `<div class="rank-up"><i data-lucide="chevron-up" class="w-3 h-3"></i>+${change}</div>`;
-            if (change < 0) return `<div class="rank-down"><i data-lucide="chevron-down" class="w-3 h-3"></i>${change}</div>`;
-            return `<div class="rank-same">-</div>`;
-        }
-
-        function renderLeaderboard() {
-            const query = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase() : '';
-            const container = document.getElementById('view-container');
-            const filtered = processedFarmers.filter(f => f.name.toLowerCase().includes(query));
-
-            container.innerHTML = `
-                <div class="grid grid-cols-1 gap-4 animate-slide-up">
-                    <div class="hidden md:grid grid-cols-12 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                        <div class="col-span-1">Rank</div>
-                        <div class="col-span-4">Farmer Profile</div>
-                        <div class="col-span-2 text-center">Avg & Form</div>
-                        <div class="col-span-2 text-center">Cost</div>
-                        <div class="col-span-2 text-center">Latest</div>
-                        <div class="col-span-1 text-right">Actions</div>
-                    </div>
-                    ${filtered.map((f, i) => {
-                        const latest = f.scores[0];
-                        const latestScore = latest ? latest.score : 0;
-                        const isOwned = wallet.roster.includes(f.id);
-                        const isBestOfDay = latest && latest.score === dailyBestScores[latest.date];
-                        const last5 = f.scores.slice(0, 5).reverse();
-                        const cardClass = f.isKing ? 'glass-card signature-card' : 'glass-card';
-
-                        return `
-                        <div class="${cardClass} grid grid-cols-12 items-center p-5 rounded-2xl cursor-pointer hover:bg-slate-800/50 group" onclick="renderProfile('${f.id}')">
-                            <div class="col-span-2 md:col-span-1 font-black text-slate-500 text-lg italic flex flex-col items-center justify-center">
-                                #${i + 1}
-                                ${getRankArrow(f.rankChange)}
-                            </div>
-                            
-                            <div class="col-span-6 md:col-span-4 flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center font-bold text-indigo-400 border border-slate-700 text-xl relative">
-                                    ${f.name[0]}
-                                    ${isOwned ? `<div class="absolute -top-1 -right-1 bg-emerald-500 text-white w-4 h-4 rounded-full flex items-center justify-center border border-slate-900 shadow-sm"><i data-lucide="check" class="w-2 h-2"></i></div>` : ''}
-                                </div>
-                                <div>
-                                    <div class="font-bold text-white text-lg flex items-center gap-2">
-                                        ${f.name}
-                                        ${isBestOfDay ? '<i data-lucide="star" class="w-4 h-4 text-yellow-500 fill-yellow-500"></i>' : ''}
-                                        ${f.isKing ? '<i data-lucide="crown" class="w-4 h-4 text-amber-400 fill-amber-400"></i>' : ''}
-                                    </div>
-                                    <div class="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Contributor</div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-span-4 md:col-span-2 flex flex-col justify-center items-end md:items-center">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xl font-black ${getTailwindColor(f.currentAvg)}">${f.currentAvg}</span>
-                                    ${getTrendIcon(f.trend)}
-                                </div>
-                                <div class="flex gap-1 mt-1">
-                                    ${last5.map(s => `<div class="w-2 h-2 rounded-sm ${getScoreBgColor(s.score)}" title="${s.score} (${s.date})"></div>`).join('')}
-                                </div>
-                            </div>
-
-                            <div class="hidden md:flex col-span-2 justify-center items-center gap-1">
-                                <span class="text-lg font-black text-amber-400">${f.price}</span>
-                                <span class="text-xs text-amber-500/50 font-bold">CP</span>
-                            </div>
-
-                            <div class="hidden md:flex col-span-2 justify-center">
-                                <span class="text-lg font-black ${getTailwindColor(latestScore)} bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700/50">${latestScore.toFixed(1)}</span>
-                            </div>
-
-                            <div class="hidden md:flex col-span-1 justify-end gap-2">
-                                <button onclick="event.stopPropagation(); addToCompare('${f.id}')" class="p-2 rounded-lg transition hover:bg-slate-700 text-slate-500 hover:text-indigo-400" title="Compare">
-                                    <i data-lucide="${compareSelection.includes(f.id) ? 'check-circle' : 'swords'}" class="w-5 h-5"></i>
-                                </button>
-                                <button onclick="event.stopPropagation(); handleRecruit('${f.id}')" class="p-2 rounded-lg transition ${isOwned ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'}">
-                                    <i data-lucide="${isOwned ? 'x' : 'user-plus'}" class="w-5 h-5"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `}).join('')}
-                </div>
-            `;
-            lucide.createIcons();
-        }
-
-        function renderProfile(id) {
-            const f = processedFarmers.find(x => x.id === id);
-            const container = document.getElementById('view-container');
-            const isOwned = wallet.roster.includes(f.id);
-            const isComparing = compareSelection.includes(f.id);
-            const cardClass = f.isKing ? 'glass-card signature-card' : 'glass-card';
-            
-            container.innerHTML = `
-                <div class="animate-slide-up pb-10">
-                    <button onclick="renderLeaderboard()" class="mb-8 flex items-center gap-2 text-slate-400 hover:text-white transition font-bold text-sm uppercase tracking-widest">
-                        <i data-lucide="chevron-left" class="w-4 h-4"></i> Back to Database
-                    </button>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div class="lg:col-span-1 space-y-6">
-                            <div class="${cardClass} p-8 rounded-[2rem] text-center border-b-4 ${isOwned ? 'border-emerald-500' : 'border-indigo-500'}">
-                                <div class="w-24 h-24 rounded-3xl bg-indigo-600 mx-auto mb-6 flex items-center justify-center text-4xl font-black shadow-2xl shadow-indigo-500/40 relative">
-                                    ${f.name[0]}
-                                    ${isOwned ? `<div class="absolute -top-2 -right-2 bg-emerald-500 text-white px-3 py-1 text-xs font-bold rounded-full border-4 border-slate-900 shadow-sm">OWNED</div>` : ''}
-                                </div>
-                                <h2 class="text-3xl font-black mb-1 flex items-center justify-center gap-2">
-                                    ${f.name}
-                                    ${f.isKing ? '<i data-lucide="crown" class="w-6 h-6 text-amber-400 fill-amber-400"></i>' : ''}
-                                </h2>
-                                <p class="text-indigo-400 font-bold mb-6 uppercase tracking-widest text-xs">${f.grade.label}</p>
-                                <div class="grid grid-cols-2 gap-3 mb-6">
-                                    <div class="bg-slate-900/50 p-3 rounded-2xl border border-slate-800">
-                                        <span class="block text-[8px] text-slate-500 uppercase font-black mb-1">Valuation</span>
-                                        <span class="text-xl font-black text-amber-400">${f.price} CP</span>
-                                    </div>
-                                    <div class="bg-slate-900/50 p-3 rounded-2xl border border-slate-800">
-                                        <span class="block text-[8px] text-slate-500 uppercase font-black mb-1">Mean</span>
-                                        <span class="text-xl font-black ${getTailwindColor(f.currentAvg)}">${f.currentAvg}</span>
-                                    </div>
-                                </div>
-                                <div class="text-[10px] text-slate-500 mb-4 bg-slate-900/50 p-2 rounded-lg">Payout: >9.0 Jackpot, >8.0 Profit, &lt;6.5 Penalty</div>
-                                <div class="flex gap-3">
-                                    <button onclick="addToCompare('${f.id}')" class="flex-1 py-4 rounded-xl font-black uppercase tracking-widest text-xs transition shadow-lg flex items-center justify-center gap-2 ${isComparing ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}">
-                                        <i data-lucide="${isComparing ? 'check' : 'swords'}" class="w-4 h-4"></i> ${isComparing ? 'Selected' : 'Compare'}
-                                    </button>
-                                    <button onclick="handleRecruit('${f.id}')" class="flex-[2] py-4 rounded-xl font-black uppercase tracking-widest text-xs transition shadow-lg flex items-center justify-center gap-2 ${isOwned ? 'bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50' : 'bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/20'}">
-                                        <i data-lucide="${isOwned ? 'user-minus' : 'user-plus'}" class="w-4 h-4"></i> ${isOwned ? `Release (+${f.price})` : `Recruit (-${f.price})`}
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="glass-card p-6 rounded-3xl">
-                                <h3 class="font-black text-xs uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Match History</h3>
-                                <div class="space-y-2 max-h-[300px] overflow-y-auto custom-scroll pr-2">
-                                    ${f.scores.map(s => `<div class="flex justify-between items-center p-3 bg-slate-900/40 rounded-xl border border-slate-800/50"><div class="flex items-center gap-3"><span class="text-xs font-bold text-slate-500">${s.date}</span>${s.score === dailyBestScores[s.date] ? '<i data-lucide="star" class="w-3.5 h-3.5 text-yellow-500 fill-yellow-500"></i>' : ''}</div><span class="font-black ${getTailwindColor(s.score)}">${s.score.toFixed(1)}</span></div>`).join('')}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="lg:col-span-2 space-y-6">
-                            <div class="glass-card p-8 rounded-3xl h-[400px]"><h3 class="font-black text-xs uppercase tracking-[0.2em] text-slate-400 mb-6">Attribute DNA</h3><canvas id="attributeChart"></canvas></div>
-                            <div class="glass-card p-8 rounded-3xl"><h3 class="font-black text-xs uppercase tracking-[0.2em] text-slate-400 mb-6">Performance Trajectory</h3><canvas id="historyChart" height="150"></canvas></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            lucide.createIcons();
-            initCharts(f);
-        }
-
-        function addToCompare(id) {
-            if (compareSelection.includes(id)) compareSelection = compareSelection.filter(x => x !== id);
-            else { if (compareSelection.length >= 2) compareSelection.shift(); compareSelection.push(id); }
-            document.getElementById('compareBtn').innerHTML = `<i data-lucide="swords" class="w-4 h-4"></i> Compare (${compareSelection.length})`;
-            const profileHeader = document.querySelector('#view-container h2');
-            const f = processedFarmers.find(x => x.id === id);
-            if(profileHeader && profileHeader.innerText.includes(f.name)) renderProfile(id);
-            else renderLeaderboard();
-        }
-
-        function toggleCompareMode() {
-            const modal = document.getElementById('compareModal');
-            modal.classList.toggle('hidden');
-            if (!modal.classList.contains('hidden')) renderComparison();
-        }
-
-        function renderComparison() {
-            const content = document.getElementById('compareContent');
-            if (compareSelection.length < 2) { content.innerHTML = `<div class="text-center py-20 text-slate-500 font-bold uppercase tracking-widest">Select two farmers to compare</div>`; return; }
-            const f1 = processedFarmers.find(x => x.id === compareSelection[0]);
-            const f2 = processedFarmers.find(x => x.id === compareSelection[1]);
-
-            // Helper: who wins each stat
-            const wins = (v1, v2, higher = true) => higher ? v1 > v2 : v1 < v2;
-
-            // Build stat row HTML
-            const statRow = (label, v1, v2, higher = true, format = x => x) => {
-                const w1 = wins(v1, v2, higher);
-                const w2 = wins(v2, v1, higher);
-                return `
-                    <div class="flex items-center gap-3 py-2 border-b border-slate-800/50">
-                        <div class="flex-1 text-right">
-                            <span class="font-black ${w1 ? 'text-white' : 'text-slate-500'}">${format(v1)}</span>
-                            ${w1 ? '<i data-lucide="check-circle" class="w-3 h-3 text-indigo-400 inline ml-1"></i>' : ''}
-                        </div>
-                        <div class="w-28 text-center text-[10px] font-black uppercase tracking-wider text-slate-500 shrink-0">${label}</div>
-                        <div class="flex-1 text-left">
-                            ${w2 ? '<i data-lucide="check-circle" class="w-3 h-3 text-pink-400 inline mr-1"></i>' : ''}
-                            <span class="font-black ${w2 ? 'text-white' : 'text-slate-500'}">${format(v2)}</span>
-                        </div>
-                    </div>`;
-            };
-
-            // Score distribution bars for last 14 days
-            const dist = (f) => {
-                const buckets = { 'Elite (≥9)': 0, 'Great (8+)': 0, 'Good (7+)': 0, 'OK (6.5+)': 0, 'Poor (<6.5)': 0 };
-                f.scores.slice(0, 14).forEach(s => {
-                    if (s.score >= 9) buckets['Elite (≥9)']++;
-                    else if (s.score >= 8) buckets['Great (8+)']++;
-                    else if (s.score >= 7) buckets['Good (7+)']++;
-                    else if (s.score >= 6.5) buckets['OK (6.5+)']++;
-                    else buckets['Poor (<6.5)']++;
-                });
-                return buckets;
-            };
-
-            const d1 = dist(f1), d2 = dist(f2);
-            const total = 14;
-            const distColors = { 'Elite (≥9)': '#a855f7', 'Great (8+)': '#3b82f6', 'Good (7+)': '#22c55e', 'OK (6.5+)': '#eab308', 'Poor (<6.5)': '#ef4444' };
-
-            const distBars = (d) => Object.entries(d).map(([label, count]) => {
-                const pct = Math.round((count / total) * 100);
-                return `
-                    <div class="mb-1.5">
-                        <div class="flex justify-between text-[10px] text-slate-500 mb-1 font-bold"><span>${label}</span><span>${count} game${count !== 1 ? 's' : ''}</span></div>
-                        <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:${distColors[label]}"></div></div>
-                    </div>`;
-            }).join('');
-            // --- Last 5 leaderboard positions ---
-            // At score index i, recalculate every farmer's 14-day average as it was at that point
-            // (using scores[i..i+13] as the window), then sort to find true leaderboard rank
-            const getLeaderboardRankAtIndex = (f, i) => {
-                const mySlice = f.scores.slice(i, i + 14);
-                if (mySlice.length === 0) return null;
-                const myAvg = mySlice.reduce((a, b) => a + b.score, 0) / mySlice.length;
-                const rank = processedFarmers.filter(other => {
-                    const slice = other.scores.slice(i, i + 14);
-                    if (slice.length === 0) return false;
-                    const avg = slice.reduce((a, b) => a + b.score, 0) / slice.length;
-                    return avg > myAvg;
-                }).length + 1;
-                return { date: f.scores[i]?.date, rank };
-            };
-
-            const pos1 = [0,1,2,3,4].map(i => getLeaderboardRankAtIndex(f1, i));
-            const pos2 = [0,1,2,3,4].map(i => getLeaderboardRankAtIndex(f2, i));
-
-            const rankStyle = (rank) => rank === 1 ? 'text-amber-400 font-black' : rank === 2 ? 'text-slate-300 font-black' : rank === 3 ? 'text-orange-400 font-black' : 'text-slate-500 font-bold';
-            const rankLabel = (rank) => rank === 1 ? '🥇 #1' : rank === 2 ? '🥈 #2' : rank === 3 ? '🥉 #3' : `#${rank}`;
-
-            const positionRow = (p1, p2, label) => `
-                <div class="flex items-center gap-2 py-2.5 border-b border-slate-800/40">
-                    <div class="w-16 text-center text-[10px] font-black uppercase tracking-wider text-slate-600">${label}</div>
-                    <div class="flex-1 flex items-center justify-end gap-2">
-                        ${p1 ? `<span class="text-sm ${rankStyle(p1.rank)}">${rankLabel(p1.rank)}</span>` : '<span class="text-slate-700 text-xs font-bold">—</span>'}
-                    </div>
-                    <div class="w-16 text-center text-[10px] text-slate-600 font-bold">${p1?.date?.slice(5) ?? ''}</div>
-                    <div class="flex-1 flex items-center justify-start gap-2">
-                        ${p2 ? `<span class="text-sm ${rankStyle(p2.rank)}">${rankLabel(p2.rank)}</span>` : '<span class="text-slate-700 text-xs font-bold">—</span>'}
-                    </div>
-                </div>`;
-
-            const hist1 = f1.scores.slice(0, 8).reverse();
-            const hist2 = f2.scores.slice(0, 8).reverse();
-            // Use union of dates for labels
-            const allDates = [...new Set([...hist1.map(s=>s.date), ...hist2.map(s=>s.date)])].sort();
-            const getScore = (scores, date) => { const s = scores.find(x => x.date === date); return s ? s.score : null; };
-
-            content.innerHTML = `
-                <!-- Header Cards -->
-                <div class="grid grid-cols-2 gap-6 mb-6">
-                    <div class="glass-card p-6 rounded-2xl border-t-4 border-indigo-500">
-                        <h3 class="text-2xl font-black text-white mb-1 flex items-center gap-2">${f1.name} ${f1.isKing ? '<i data-lucide="crown" class="w-5 h-5 text-amber-400 fill-amber-400"></i>' : ''}</h3>
-                        <p class="text-indigo-400 font-bold text-xs uppercase mb-1">${f1.grade.label}</p>
-                        <p class="text-3xl font-black ${getTailwindColor(f1.currentAvg)}">${f1.currentAvg}</p>
-                        <p class="text-[10px] text-slate-500 uppercase font-bold">14-day avg</p>
-                    </div>
-                    <div class="glass-card p-6 rounded-2xl border-t-4 border-pink-500">
-                        <h3 class="text-2xl font-black text-white mb-1 flex items-center gap-2">${f2.name} ${f2.isKing ? '<i data-lucide="crown" class="w-5 h-5 text-amber-400 fill-amber-400"></i>' : ''}</h3>
-                        <p class="text-pink-400 font-bold text-xs uppercase mb-1">${f2.grade.label}</p>
-                        <p class="text-3xl font-black ${getTailwindColor(f2.currentAvg)}">${f2.currentAvg}</p>
-                        <p class="text-[10px] text-slate-500 uppercase font-bold">14-day avg</p>
-                    </div>
-                </div>
-
-                <!-- Last 5 Positions -->
-                <div class="glass-card p-6 rounded-2xl mb-6">
-                    <h4 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-1 text-center">Last 5 Positions</h4>
-                    <p class="text-[10px] text-slate-600 text-center mb-4 font-bold">Leaderboard rank at each of the last 5 score updates</p>
-                    <div class="flex items-center gap-2 pb-2 border-b border-slate-700/60 mb-1">
-                        <div class="w-16"></div>
-                        <div class="flex-1 text-right text-[10px] font-black uppercase tracking-wider text-indigo-400">${f1.name}</div>
-                        <div class="w-12 text-center text-[10px] text-slate-600 font-bold">Date</div>
-                        <div class="flex-1 text-left text-[10px] font-black uppercase tracking-wider text-pink-400">${f2.name}</div>
-                    </div>
-                    ${['Latest','2nd','3rd','4th','5th'].map((label, i) => positionRow(pos1[i], pos2[i], label)).join('')}
-                </div>
-
-                <!-- Stat comparison table -->
-                <div class="glass-card p-6 rounded-2xl mb-6">
-                    <h4 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 text-center">Head-to-Head Stats</h4>
-                    ${statRow('Best (14d)', f1.stats.best14, f2.stats.best14, true, v => v.toFixed(1))}
-                    ${statRow('Worst (14d)', f1.stats.worst14, f2.stats.worst14, true, v => v.toFixed(1))}
-                    ${statRow('Profit Rate', f1.stats.profitRate, f2.stats.profitRate, true, v => v + '%')}
-                    ${statRow('Form Points', f1.formPoints, f2.formPoints, true, v => (v > 0 ? '+' : '') + v)}
-                    ${statRow('⭐ Stars', f1.stats.starCount, f2.stats.starCount, true)}
-                    ${statRow('Valuation', f1.price, f2.price, false, v => v + ' CP')}
-                </div>
-
-                <!-- Momentum charts — one per farmer, stacked -->
-                <div class="glass-card p-6 rounded-2xl mb-6">
-                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-5">Score Momentum (Last 8)</h4>
-                    <div class="mb-6">
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block"></span>
-                            <span class="text-xs font-black text-indigo-400 uppercase tracking-wider">${f1.name}</span>
-                            <span class="ml-auto text-[10px] text-slate-500 font-bold">avg <span class="${getTailwindColor(f1.currentAvg)} font-black">${f1.currentAvg}</span></span>
-                        </div>
-                        <canvas id="momentum1Chart" height="80"></canvas>
-                    </div>
-                    <div class="border-t border-slate-800/60 pt-6">
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="w-2.5 h-2.5 rounded-full bg-pink-500 inline-block"></span>
-                            <span class="text-xs font-black text-pink-400 uppercase tracking-wider">${f2.name}</span>
-                            <span class="ml-auto text-[10px] text-slate-500 font-bold">avg <span class="${getTailwindColor(f2.currentAvg)} font-black">${f2.currentAvg}</span></span>
-                        </div>
-                        <canvas id="momentum2Chart" height="80"></canvas>
-                    </div>
-                </div>
-
-                <!-- Radar + Distribution -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="glass-card p-6 rounded-2xl md:col-span-1"><h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Attribute DNA</h4><canvas id="compareRadarChart"></canvas></div>
-                    <div class="glass-card p-6 rounded-2xl">
-                        <h4 class="text-xs font-black uppercase tracking-widest text-indigo-400 mb-4">${f1.name} — Distribution (14d)</h4>
-                        ${distBars(d1)}
-                    </div>
-                    <div class="glass-card p-6 rounded-2xl">
-                        <h4 class="text-xs font-black uppercase tracking-widest text-pink-400 mb-4">${f2.name} — Distribution (14d)</h4>
-                        ${distBars(d2)}
-                    </div>
-                </div>
-            `;
-            lucide.createIcons();
-
-            // Radar
-            new Chart(document.getElementById('compareRadarChart'), {
-                type: 'radar',
-                data: {
-                    labels: ['Creativity', 'Consistency', 'Attendance', 'Presence', 'Quality'],
-                    datasets: [
-                        { label: f1.name, data: Object.values(f1.attributes), borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.15)', pointBackgroundColor: '#6366f1', borderWidth: 2 },
-                        { label: f2.name, data: Object.values(f2.attributes), borderColor: '#ec4899', backgroundColor: 'rgba(236, 72, 153, 0.15)', pointBackgroundColor: '#ec4899', borderWidth: 2 }
-                    ]
-                },
-                options: {
-                    scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.05)' }, pointLabels: { color: '#64748b', font: { weight: 'bold', size: 10 } } } },
-                    plugins: { legend: { display: false } }
-                }
-            });
-
-            // Momentum charts — one per farmer, clean line with coloured points
-            const momentumChart = (canvasId, hist, avgVal, lineColor) => {
-                new Chart(document.getElementById(canvasId), {
-                    type: 'line',
-                    data: {
-                        labels: hist.map(s => s.date.slice(5)),
-                        datasets: [
-                            // Avg reference band (filled area)
-                            {
-                                data: Array(hist.length).fill(avgVal),
-                                borderColor: lineColor + '40',
-                                borderWidth: 1,
-                                borderDash: [5, 4],
-                                pointRadius: 0,
-                                fill: false,
-                                tension: 0,
-                            },
-                            // Main score line
-                            {
-                                data: hist.map(s => s.score),
-                                borderColor: lineColor,
-                                borderWidth: 2.5,
-                                backgroundColor: lineColor + '12',
-                                fill: true,
-                                tension: 0.35,
-                                pointRadius: hist.map(s => 6),
-                                pointBackgroundColor: hist.map(s => getHexColor(s.score)),
-                                pointBorderColor: hist.map(s => getHexColor(s.score)),
-                                pointBorderWidth: 2,
-                                pointHoverRadius: 8,
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            y: {
-                                min: Math.max(4, Math.floor(Math.min(...hist.map(s=>s.score)) - 0.5)),
-                                max: Math.min(10, Math.ceil(Math.max(...hist.map(s=>s.score)) + 0.5)),
-                                grid: { color: 'rgba(255,255,255,0.03)' },
-                                ticks: { color: '#475569', font: { weight: 'bold', size: 9 }, callback: v => v.toFixed(1) },
-                                border: { display: false }
-                            },
-                            x: {
-                                grid: { display: false },
-                                ticks: { color: '#475569', font: { weight: 'bold', size: 9 } },
-                                border: { display: false }
-                            }
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                backgroundColor: 'rgba(15,23,42,0.97)',
-                                borderColor: lineColor + '50',
-                                borderWidth: 1,
-                                titleColor: '#94a3b8',
-                                bodyColor: '#fff',
-                                padding: 10,
-                                callbacks: {
-                                    label: ctx => {
-                                        if (ctx.datasetIndex === 0) return ` Avg: ${avgVal}`;
-                                        return ` Score: ${ctx.parsed.y.toFixed(1)}`;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            };
-
-            momentumChart('momentum1Chart', hist1, f1.currentAvg, '#6366f1');
-            momentumChart('momentum2Chart', hist2, f2.currentAvg, '#ec4899');
-        }
-
-        // --- CHARTING & HELPERS ---
-        function getTrendIcon(trend) { if (trend === 'up') return '<i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>'; if (trend === 'down') return '<i data-lucide="trending-down" class="w-4 h-4 text-red-400"></i>'; return '<i data-lucide="minus" class="w-4 h-4 text-slate-500"></i>'; }
-        function initCharts(f) {
-            new Chart(document.getElementById('attributeChart'), { type: 'radar', data: { labels: ['Creativity', 'Consistency', 'Attendance', 'Presence', 'Quality'], datasets: [{ data: Object.values(f.attributes), backgroundColor: 'rgba(99, 102, 241, 0.2)', borderColor: '#6366f1', borderWidth: 3, pointBackgroundColor: '#6366f1' }] }, options: { scales: { r: { min: 0, max: 100, ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.05)' }, pointLabels: { color: '#64748b', font: { weight: 'bold', size: 10 } } } }, plugins: { legend: { display: false } } } });
-            const histData = [...f.scores].reverse().slice(-10);
-            new Chart(document.getElementById('historyChart'), { type: 'bar', data: { labels: histData.map(s => s.date.slice(5)), datasets: [{ data: histData.map(s => s.score), backgroundColor: histData.map(s => getHexColor(s.score)), borderRadius: 8 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 10, grid: { color: 'rgba(255,255,255,0.05)' } } } } });
-        }
-
-        // ==============================
-        // TUTORIAL
-        // ==============================
-        const TOTAL_TUT_STEPS = 8;
-        let currentTutStep = 0;
-
-        function buildTutDots() {
-            const el = document.getElementById('tutDots');
-            el.innerHTML = '';
-            for (let i = 0; i < TOTAL_TUT_STEPS; i++) {
-                const d = document.createElement('div');
-                d.className = `tutorial-dot${i === currentTutStep ? ' active' : ''}`;
-                el.appendChild(d);
-            }
-        }
-
-        function updateTutUI() {
-            for (let i = 0; i < TOTAL_TUT_STEPS; i++) {
-                const s = document.getElementById(`tutStep${i}`);
-                if (s) s.classList.toggle('active', i === currentTutStep);
-            }
-            buildTutDots();
-            const prevBtn = document.getElementById('tutPrevBtn');
-            const nextBtn = document.getElementById('tutNextBtn');
-            if (prevBtn) prevBtn.classList.toggle('hidden', currentTutStep === 0);
-            if (nextBtn) nextBtn.innerText = currentTutStep === TOTAL_TUT_STEPS - 1 ? '✓ Got it!' : 'Next →';
-        }
-
-        function tutNext() {
-            if (currentTutStep < TOTAL_TUT_STEPS - 1) {
-                currentTutStep++;
-                updateTutUI();
-            } else {
-                closeTutorial();
-            }
-        }
-
-        function tutPrev() {
-            if (currentTutStep > 0) { currentTutStep--; updateTutUI(); }
-        }
-
-        function openTutorial() {
-            currentTutStep = 0;
-            document.getElementById('tutorialOverlay').classList.remove('hidden');
-            updateTutUI();
-        }
-
-        function closeTutorial() {
-            document.getElementById('tutorialOverlay').classList.add('hidden');
-            localStorage.setItem('cr_tutorial_done', '1');
-        }
-
-        // ==============================
-        // ACCOUNT & GLOBAL LEADERBOARD (Anthropic API powered)
-        // ==============================
-        let accountUser = null;
-
-        function loadAccountUser() {
-            const saved = localStorage.getItem('cr_account');
-            if (saved) {
-                accountUser = JSON.parse(saved);
-                startAutoSync(); // begin hourly background sync
-            }
-        }
-
-        function saveAccountUser(u) {
-            accountUser = u;
-            localStorage.setItem('cr_account', JSON.stringify(u));
-        }
-
-        function openAccountModal() {
-            document.getElementById('accountModal').classList.remove('hidden');
-            lucide.createIcons();
-            renderAccountPanel();
-            loadGlobalLeaderboard();
-        }
-
-        function closeAccountModal() {
-            document.getElementById('accountModal').classList.add('hidden');
-        }
-
-        function renderAccountPanel() {
-            const panel = document.getElementById('accountPanel');
-            if (accountUser) {
-                const nw = parseFloat(document.getElementById('netWorth').innerText) || 0;
-                const lastSync = accountUser.lastSync
-                    ? new Date(accountUser.lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    : 'Never';
-                panel.innerHTML = `
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div>
-                            <div class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Signed in as</div>
-                            <div class="text-xl font-black text-white flex items-center gap-2">
-                                <span class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-black">${accountUser.username[0].toUpperCase()}</span>
-                                ${accountUser.username}
-                            </div>
-                            <div class="text-xs text-slate-500 mt-1">
-                                Net worth: <span class="text-emerald-400 font-bold">${nw.toFixed(0)} CP</span>
-                                <span class="mx-2 text-slate-700">·</span>
-                                <span id="lastSyncLabel">Last synced: ${lastSync}</span>
-                                <span class="ml-2 text-[10px] text-indigo-400 font-bold">· Auto-syncs hourly</span>
-                            </div>
-                        </div>
-                        <div class="flex gap-3">
-                            <button onclick="publishToLeaderboard()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-black uppercase tracking-wider rounded-xl transition flex items-center gap-2" title="Sync now">
-                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync Now
-                            </button>
-                            <button onclick="signOut()" class="px-4 py-2 bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-slate-400 text-xs font-black uppercase tracking-wider rounded-xl transition">Sign Out</button>
-                        </div>
-                    </div>
-                `;
-            } else {
-                panel.innerHTML = `
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-                        <div>
-                            <div class="text-sm font-bold text-white mb-1">Create a free account</div>
-                            <div class="text-xs text-slate-400">Appear on the global leaderboard. Your score syncs automatically every hour.</div>
-                        </div>
-                        <div class="flex gap-2 w-full sm:w-auto">
-                            <input type="text" id="usernameInput" placeholder="Pick a username..." maxlength="20" class="bg-slate-800 border border-slate-700 focus:border-indigo-500 outline-none text-white text-sm px-3 py-2 rounded-xl w-full sm:w-48 transition">
-                            <button onclick="createAccount()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-wider rounded-xl transition whitespace-nowrap flex items-center gap-2">
-                                <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Join
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
-            lucide.createIcons();
-        }
-
-        async function createAccount() {
-            const input = document.getElementById('usernameInput');
-            const username = input ? input.value.trim() : '';
-            if (!username || username.length < 2) return showToast('Enter a username (min 2 chars)', 'error');
-            const userId = 'user_' + username.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Math.random().toString(36).slice(2, 6);
-            saveAccountUser({ username, userId });
-            startAutoSync();
-            showToast(`Account created! Welcome, ${username}!`, 'gold');
-            await publishToLeaderboard();
-            renderAccountPanel();
-        }
-
-        function signOut() {
-            accountUser = null;
-            localStorage.removeItem('cr_account');
-            renderAccountPanel();
-        }
-
-        // Paste your Google Apps Script Web App URL here after deploying
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxx2J-o4h95seQFBQw6ClMdtWv6Yh6EDxRidFfXvG3HdenOz26u7Bh5jBJzZP9ekkkY1A/exec';
-        const AUTO_SYNC_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
-        let autoSyncInterval = null;
-        let isAdminMode = false;
-
-        // Silent background publish — no toasts, no errors shown to user
-        async function silentPublish() {
-            if (!accountUser) return;
-            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return;
-            const nw = parseFloat(document.getElementById('netWorth').innerText) || 0;
-            const rosterNames = wallet.roster.map(id => {
-                const f = processedFarmers.find(x => x.id === id);
-                return f ? f.name : id;
-            });
-            try {
-                const res = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        userId: accountUser.userId,
-                        username: accountUser.username,
-                        netWorth: nw,
-                        roster: rosterNames
-                    })
-                });
-                const json = await res.json();
-                if (json.ok) {
-                    accountUser.lastSync = Date.now();
-                    localStorage.setItem('cr_account', JSON.stringify(accountUser));
-                    // Refresh the "last synced" label if the modal is open
-                    const syncLabel = document.getElementById('lastSyncLabel');
-                    if (syncLabel) syncLabel.innerText = 'Last synced: just now';
-                }
-            } catch(e) {
-                // Fail silently — background sync, user doesn't need to know
-            }
-        }
-
-        // Start the hourly background auto-sync
-        function startAutoSync() {
-            if (autoSyncInterval) clearInterval(autoSyncInterval);
-            autoSyncInterval = setInterval(() => {
-                silentPublish();
-            }, AUTO_SYNC_INTERVAL_MS);
-        }
-
-        async function publishToLeaderboard() {
-            if (!accountUser) return showToast('Create an account first', 'error');
-            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-                return showToast('Paste your Apps Script URL into index.html first!', 'error');
-            }
-            const nw = parseFloat(document.getElementById('netWorth').innerText) || 0;
-            const rosterNames = wallet.roster.map(id => {
-                const f = processedFarmers.find(x => x.id === id);
-                return f ? f.name : id;
-            });
-            try {
-                const res = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        userId: accountUser.userId,
-                        username: accountUser.username,
-                        netWorth: nw,
-                        roster: rosterNames
-                    })
-                });
-                const json = await res.json();
-                if (!json.ok) throw new Error(json.error || 'Unknown error');
-                accountUser.lastSync = Date.now();
-                localStorage.setItem('cr_account', JSON.stringify(accountUser));
-                showToast('Leaderboard updated! 🏆', 'success');
-                renderAccountPanel();
-                loadGlobalLeaderboard();
-            } catch (e) {
-                console.error('Publish error:', e);
-                showToast('Could not publish. Check your Apps Script URL.', 'error');
-            }
-        }
-
-        async function loadGlobalLeaderboard() {
-            const listEl = document.getElementById('globalLbList');
-            listEl.innerHTML = `<div class="p-8 text-center"><div class="loading-spinner mx-auto mb-3"></div><p class="text-slate-500 text-sm font-bold animate-pulse">FETCHING MANAGERS...</p></div>`;
-
-            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-                listEl.innerHTML = `<div class="p-8 text-center text-slate-500 font-bold text-sm">⚙️ Paste your Apps Script URL into index.html to enable the leaderboard.</div>`;
-                return;
-            }
-
-            try {
-                const res = await fetch(APPS_SCRIPT_URL);
-                const json = await res.json();
-                if (!json.ok) throw new Error('Bad response');
-
-                const entries = (json.entries || []).sort((a, b) => b.netWorth - a.netWorth);
-
-                document.getElementById('lbLastUpdated').innerText = `${entries.length} manager${entries.length !== 1 ? 's' : ''} registered`;
-
-                if (entries.length === 0) {
-                    listEl.innerHTML = `<div class="p-8 text-center text-slate-500 font-bold text-sm">No managers yet. Be the first to publish your score!</div>`;
-                    return;
-                }
-
-                listEl.innerHTML = entries.map((e, i) => {
-                    const isMe = accountUser && e.username === accountUser.username;
-                    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`;
-                    const rowClass = i === 0 ? 'lb-gold' : i === 1 ? 'lb-silver' : i === 2 ? 'lb-bronze' : '';
-                    const rosterHtml = e.roster && e.roster.length > 0
-                        ? e.roster.map(name => `<span class="px-2 py-0.5 bg-slate-800 text-slate-300 rounded-md text-[10px] font-bold border border-slate-700">${name}</span>`).join('')
-                        : '<span class="text-slate-600 text-[10px]">No roster</span>';
-                    const deleteBtn = isAdminMode
-                        ? `<button onclick="deleteUser('${e.userId}','${e.username.replace(/'/g,"\\'")}') " class="ml-2 p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition" title="Remove user"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`
-                        : '';
-                    return `
-                        <div class="lb-row p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${rowClass} ${isMe ? 'bg-indigo-600/10' : ''}">
-                            <div class="w-10 text-center font-black text-lg ${i === 0 ? 'text-amber-400' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-amber-600' : 'text-slate-600'}">${medal}</div>
-                            <div class="flex-1 min-w-0">
-                                <div class="font-black text-white flex items-center gap-2">
-                                    ${e.username}
-                                    ${isMe ? '<span class="text-[9px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-black uppercase tracking-wider">You</span>' : ''}
-                                    ${deleteBtn}
-                                </div>
-                                <div class="flex flex-wrap gap-1 mt-1">${rosterHtml}</div>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-lg font-black text-emerald-400">${e.netWorth.toFixed(0)}</div>
-                                <div class="text-[10px] text-slate-500 font-bold uppercase">CP Net Worth</div>
-                            </div>
-                        </div>`;
-                }).join('');
-                lucide.createIcons();
-            } catch(e) {
-                console.error('Leaderboard load error:', e);
-                listEl.innerHTML = `<div class="p-8 text-center text-slate-500 font-bold text-sm">Failed to load leaderboard. Check your Apps Script URL.</div>`;
-            }
-        }
-
-        function toggleAdminMode() {
-            if (isAdminMode) {
-                isAdminMode = false;
-                document.getElementById('adminToggleBtn').classList.remove('text-red-400');
-                document.getElementById('adminToggleBtn').classList.add('text-slate-700');
-                loadGlobalLeaderboard();
-                return;
-            }
-            const pw = prompt('Enter admin password:');
-            if (!pw) return;
-            // We send a test delete with a dummy userId to verify — instead just store locally
-            // and let the server reject bad passwords on actual deletes
-            isAdminMode = true;
-            window._adminPassword = pw;
-            document.getElementById('adminToggleBtn').classList.remove('text-slate-700');
-            document.getElementById('adminToggleBtn').classList.add('text-red-400');
-            showToast('Admin mode on — delete buttons visible', 'error');
-            loadGlobalLeaderboard();
-        }
-
-        async function deleteUser(userId, username) {
-            if (!confirm(`Remove "${username}" from the leaderboard?`)) return;
-            try {
-                const res = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'delete', userId, adminPassword: window._adminPassword })
-                });
-                const json = await res.json();
-                if (!json.ok) {
-                    showToast(json.error === 'Unauthorised' ? 'Wrong password.' : 'Delete failed.', 'error');
-                    return;
-                }
-                showToast(`${username} removed.`, 'success');
-                loadGlobalLeaderboard();
-            } catch(e) {
-                showToast('Delete failed. Check connection.', 'error');
-            }
-        }
-
-        window.onload = init;
-    </script>
+</div>
+<div id="toast" class="fixed bottom-10 right-10 bg-slate-900 border border-slate-700 text-white px-6 py-4 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-bold flex items-center gap-3"><span id="toastMsg"></span></div>
+<script>
+const SHEET_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vSMTqwP3ViGcOKh0lYRGL9rdAL-Q84U85iZSLTqwdT3OGXKhMvIsI-pNC_cbRjcod0teMJ7YbRXREhy/pub?gid=607342177&single=true&output=csv';
+const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbxx2J-o4h95seQFBQw6ClMdtWv6Yh6EDxRidFfXvG3HdenOz26u7Bh5jBJzZP9ekkkY1A/exec';
+const MAX_ROSTER=4,AUTO_SYNC_MS=3600000,SAVE_KEY='cr4_wallet_v1',ACCT_KEY='cr4_account_v1',TUT_KEY='cr4_tut_done';
+let farmers=[],compareSelection=[],dailyBest={},cdTimer=null,autoSync=null,accountUser=null,isAdmin=false;
+let wallet={balance:100,roster:[],captain:null,lastMatchDate:null};
+
+function hex(s){return s<6?'#ef4444':s<6.5?'#f97316':s<7?'#eab308':s<8?'#22c55e':s<9?'#3b82f6':'#a855f7'}
+function tw(s){return s<6?'text-red-500':s<6.5?'text-orange-500':s<7?'text-yellow-500':s<8?'text-green-500':s<9?'text-blue-500':'text-purple-500'}
+function bg(s){return s<6?'bg-red-500':s<6.5?'bg-orange-500':s<7?'bg-yellow-500':s<8?'bg-emerald-500':s<9?'bg-blue-500':'bg-purple-500'}
+function toast(msg,type='neutral'){
+  const t=document.getElementById('toast'),c={neutral:'border-slate-700',success:'border-emerald-500 text-emerald-400',error:'border-red-500 text-red-400',gold:'border-amber-500 text-amber-400'};
+  document.getElementById('toastMsg').innerHTML=msg;
+  t.className=`fixed bottom-10 right-10 bg-slate-900 border ${c[type]||c.neutral} px-6 py-4 rounded-xl shadow-2xl transform translate-y-0 opacity-100 transition-all duration-300 z-50 font-bold flex items-center gap-3`;
+  setTimeout(()=>t.classList.add('translate-y-20','opacity-0'),5000);
+}
+
+async function init(){
+  loadAcct();
+  if(!localStorage.getItem(TUT_KEY))openTutorial();
+  const sv=localStorage.getItem(SAVE_KEY)||localStorage.getItem('cp_manager_king_v1');
+  if(sv){const p=JSON.parse(sv);wallet={balance:100,roster:[],captain:null,lastMatchDate:null,...p};}
+  try{
+    const r=await fetch(SHEET_URL);
+    Papa.parse(await r.text(),{header:true,dynamicTyping:true,complete:r=>processData(r.data)});
+  }catch{document.getElementById('loading-state').innerHTML='<p class="text-red-400 font-bold">Connection Failed.</p>';}
+}
+
+function processData(rows){
+  const map={};
+  rows.forEach(row=>{
+    if(!row.Name)return;
+    if(!map[row.Name])map[row.Name]={id:row.Name.toLowerCase().replace(/\s/g,'-'),name:row.Name,scores:[],attributes:{creativity:row.Creativity||70,consistency:row.Consistency||70,attendance:row.Attendance||70,presence:row.Presence||70,quality:row.Quality||70}};
+    map[row.Name].scores.push({date:row.Date,score:parseFloat(row.Score)});
+    if(!dailyBest[row.Date]||row.Score>dailyBest[row.Date])dailyBest[row.Date]=row.Score;
+  });
+  farmers=Object.values(map).map(f=>{
+    f.scores.sort((a,b)=>new Date(b.date)-new Date(a.date));
+    const r14=f.scores.slice(0,14),r14p=f.scores.slice(1,15);
+    const avg=r14.reduce((a,b)=>a+b.score,0)/r14.length;
+    const pAvg=r14p.length?r14p.reduce((a,b)=>a+b.score,0)/r14p.length:avg;
+    const l5=f.scores.slice(0,5);
+    let fp=0;l5.forEach(s=>{if(s.score>=9)fp+=4;else if(s.score>=8)fp+=2;else if(s.score>=7)fp+=1;else if(s.score>=6)fp-=1;else fp-=2;});
+    let stars=0;f.scores.forEach(s=>{if(dailyBest[s.date]&&s.score>=dailyBest[s.date])stars++;});
+    const priceHist=[0,1,2,3,4].map(i=>{const sl=f.scores.slice(i,i+14);if(!sl.length)return null;const a=sl.reduce((x,y)=>x+y.score,0)/sl.length;return Math.floor(Math.max(10,(a-6)*40));});
+    return{...f,
+      currentAvg:parseFloat(avg.toFixed(2)),prevAvg:parseFloat(pAvg.toFixed(2)),
+      formPoints:fp,last5Avg:l5.reduce((a,b)=>a+b.score,0)/l5.length,
+      trend:avg>pAvg?'up':avg<pAvg?'down':'equal',
+      grade:grade(avg),
+      stats:{best14:Math.max(...r14.map(s=>s.score)),worst14:Math.min(...r14.map(s=>s.score)),stars,profitRate:Math.round((r14.filter(s=>s.score>=7).length/r14.length)*100),priceHist},
+      isKing:false};
+  });
+  const king=[...farmers].sort((a,b)=>b.formPoints-a.formPoints||b.last5Avg-a.last5Avg||a.name.localeCompare(b.name))[0];
+  if(king)farmers.find(f=>f.id===king.id).isKing=true;
+  farmers.sort((a,b)=>b.currentAvg-a.currentAvg);
+  const pRanked=[...farmers].sort((a,b)=>b.prevAvg-a.prevAvg);
+  farmers.forEach((f,i)=>{f.rankChange=pRanked.findIndex(x=>x.id===f.id)-i;});
+  farmers.forEach(f=>{f.price=Math.floor(Math.max(10,(f.currentAvg-6)*40)*(f.isKing?1.2:1));});
+  updateHUD();startCD();renderCQ();
+  document.getElementById('loading-state').classList.add('hidden');
+  document.getElementById('view-container').classList.remove('hidden');
+  document.getElementById('cqSection').classList.remove('hidden');
+  renderLeaderboard();
+}
+
+function grade(s){
+  if(s>=8)return{label:'S-Tier',color:'bg-purple-500/10 text-purple-400 border-purple-500/30'};
+  if(s>=7.5)return{label:'A-Tier',color:'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'};
+  if(s>=6.5)return{label:'B-Tier',color:'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'};
+  return{label:'C-Tier',color:'bg-slate-500/10 text-slate-400 border-slate-500/30'};
+}
+
+function renderCQ(){
+  if(!farmers.length)return;
+  const scores=farmers.map(f=>f.scores[0]?.score).filter(s=>s!=null);
+  if(!scores.length)return;
+  const avg=scores.reduce((a,b)=>a+b,0)/scores.length;
+  const best=farmers.reduce((a,b)=>(b.scores[0]?.score||0)>(a.scores[0]?.score||0)?b:a);
+  const worst=farmers.reduce((a,b)=>(b.scores[0]?.score||10)<(a.scores[0]?.score||10)?b:a);
+  const el=document.getElementById('cqScore');
+  el.textContent=avg.toFixed(2);el.className=`text-5xl font-black mb-3 ${tw(avg)}`;
+  document.getElementById('fotdName').textContent=best.name;
+  document.getElementById('fotdScore').textContent=`${best.scores[0].score.toFixed(1)} — ${best.scores[0].date}`;
+  document.getElementById('wotdName').textContent=worst.name;
+  document.getElementById('wotdScore').textContent=`${worst.scores[0].score.toFixed(1)} — ${worst.scores[0].date}`;
+  const pct=Math.max(0,Math.min(100,((avg-5)/5)*100));
+  document.getElementById('cqNeedle').style.left=pct+'%';
+}
+
+function updateHUD(){
+  document.getElementById('walletBalance').innerText=wallet.balance.toFixed(0);
+  const rEl=document.getElementById('rosterCount');
+  rEl.innerText=`${wallet.roster.length}/${MAX_ROSTER}`;
+  rEl.className=wallet.roster.length>=MAX_ROSTER?'text-xl font-black text-red-400':'text-xl font-black text-indigo-400';
+  let assets=0;wallet.roster.forEach(id=>{const f=farmers.find(x=>x.id===id);if(f)assets+=f.price;});
+  document.getElementById('netWorth').innerText=(wallet.balance+assets).toFixed(0);
+  localStorage.setItem(SAVE_KEY,JSON.stringify(wallet));
+}
+
+function resetAccount(){
+  if(confirm('Reset career? CP resets to 100 and roster is cleared.')){
+    [SAVE_KEY,'cp_manager_king_v1','cp_manager_save_v5_safezone'].forEach(k=>localStorage.removeItem(k));
+    location.reload();
+  }
+}
+
+function startCD(){
+  if(cdTimer)clearInterval(cdTimer);
+  const chk=()=>{
+    const latest=farmers[0]?.scores[0]?.date;
+    const btn=document.getElementById('collectBtn'),txt=document.getElementById('collectBtnText');
+    const played=wallet.lastMatchDate&&wallet.lastMatchDate===latest;
+    btn.classList.toggle('btn-disabled',played);
+    txt.innerText=played?'Played \u2713':'Run Daily Match';
+  };
+  chk();cdTimer=setInterval(chk,30000);
+}
+
+function handleRecruit(id){
+  const f=farmers.find(x=>x.id===id);
+  if(wallet.roster.includes(id)){
+    const sell=Math.floor(f.price/2);wallet.balance+=sell;
+    wallet.roster=wallet.roster.filter(x=>x!==id);
+    if(wallet.captain===id)wallet.captain=null;
+    toast(`Released ${f.name} for ${sell} CP (50%)`,'neutral');
+  }else{
+    if(wallet.roster.length>=MAX_ROSTER)return toast('Roster Full','error');
+    if(wallet.balance<f.price)return toast('Insufficient CP','error');
+    wallet.balance-=f.price;wallet.roster.push(id);
+    toast(`Recruited ${f.name}!`,'gold');
+  }
+  updateHUD();
+  if(document.getElementById('searchInput'))renderLeaderboard();
+  const hdr=document.querySelector('#view-container h2');
+  if(hdr&&hdr.innerText.includes(f.name))renderProfile(id);
+}
+
+function toggleCaptain(id){
+  if(!wallet.roster.includes(id))return toast('Recruit this farmer first','error');
+  wallet.captain=wallet.captain===id?null:id;
+  const f=farmers.find(x=>x.id===id);
+  toast(wallet.captain===id?`${f.name} is now Captain! \uD83C\uDF96\uFE0F`:`${f.name} removed as Captain`,wallet.captain===id?'gold':'neutral');
+  updateHUD();renderLeaderboard();renderProfile(id);
+}
+
+function collectRewards(){
+  const latest=farmers[0]?.scores[0]?.date;
+  if(wallet.lastMatchDate===latest)return toast('Already played this round.','error');
+  if(!wallet.roster.length)return toast('Recruit players first!','neutral');
+  let total=0;
+  wallet.roster.forEach(id=>{
+    const f=farmers.find(x=>x.id===id);if(!f||!f.scores.length)return;
+    const score=f.scores[0].score,isCap=wallet.captain===id;
+    let cp=0;
+    if(score>=9)cp=40;else if(score>=8)cp=20;else if(score>=7)cp=(score-7)*15;else if(score<6.5)cp=-15;
+    if(isCap)cp*=2;
+    total+=cp;
+  });
+  wallet.balance+=total;if(wallet.balance<0)wallet.balance=0;
+  wallet.lastMatchDate=latest;updateHUD();startCD();
+  const emoji=total>=50?'\uD83D\uDE80':total>=0?'\uD83E\uDD11':'\uD83D\uDCC9';
+  toast(`${emoji} Matchday: ${total>=0?'+':''}${total.toFixed(1)} CP`,total>=0?'gold':'error');
+  silentPublish();
+}
+
+function trendBadge(f){
+  const diff=parseFloat((f.currentAvg-f.prevAvg).toFixed(2));
+  if(diff>0)return`<span class="text-emerald-400 text-[10px] font-black flex items-center gap-0.5 mt-0.5"><i data-lucide="trending-up" class="w-3 h-3"></i>+${diff}</span>`;
+  if(diff<0)return`<span class="text-red-400 text-[10px] font-black flex items-center gap-0.5 mt-0.5"><i data-lucide="trending-down" class="w-3 h-3"></i>${diff}</span>`;
+  return`<span class="text-slate-600 text-[10px] font-black mt-0.5">&#8212;</span>`;
+}
+function rankArrow(c){
+  if(c>0)return`<div class="rank-up"><i data-lucide="chevron-up" class="w-3 h-3"></i>+${c}</div>`;
+  if(c<0)return`<div class="rank-down"><i data-lucide="chevron-down" class="w-3 h-3"></i>${c}</div>`;
+  return`<div class="rank-same">&mdash;</div>`;
+}
+
+function renderLeaderboard(){
+  const cqs=document.getElementById('cqSection');if(cqs)cqs.classList.remove('hidden');
+  const q=document.getElementById('searchInput')?.value.toLowerCase()||'';
+  const filtered=farmers.filter(f=>f.name.toLowerCase().includes(q));
+  const c=document.getElementById('view-container');
+  c.innerHTML=`<div class="grid grid-cols-1 gap-4 animate-slide-up">
+    <div class="hidden md:grid grid-cols-12 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
+      <div class="col-span-1">Rank</div><div class="col-span-4">Creator</div>
+      <div class="col-span-2 text-center">Avg&amp;Form</div><div class="col-span-2 text-center">Value</div>
+      <div class="col-span-2 text-center">Latest</div><div class="col-span-1 text-right">Actions</div>
+    </div>
+    ${filtered.map((f,i)=>{
+      const lat=f.scores[0],isOwned=wallet.roster.includes(f.id),isCap=wallet.captain===f.id;
+      const isBest=lat&&lat.score===dailyBest[lat.date],l5=f.scores.slice(0,5).reverse();
+      const cls=f.isKing?'glass-card signature-card':'glass-card';
+      return`<div class="${cls} grid grid-cols-12 items-center p-5 rounded-2xl cursor-pointer hover:bg-slate-800/50" onclick="renderProfile('${f.id}')">
+        <div class="col-span-2 md:col-span-1 font-black text-slate-500 text-lg italic flex flex-col items-center">#${i+1}${rankArrow(f.rankChange)}</div>
+        <div class="col-span-10 md:col-span-4 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-xl font-black shadow-lg relative shrink-0">${f.name[0]}${isOwned?'<div class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-900"></div>':''}</div>
+          <div><div class="font-black text-white flex items-center gap-1.5 flex-wrap">${f.name}${f.isKing?'<i data-lucide="crown" class="w-3.5 h-3.5 text-amber-400 fill-amber-400"></i>':''}${isBest?'<i data-lucide="star" class="w-3.5 h-3.5 text-yellow-500 fill-yellow-500"></i>':''}${isCap?'<span class="captain-badge text-sm">(C)</span>':''}</div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full border ${f.grade.color} font-bold">${f.grade.label}</span>
+          <div class="flex gap-1 mt-1">${l5.map(s=>`<div class="w-2 h-2 rounded-sm ${bg(s.score)}" title="${s.score}"></div>`).join('')}</div></div>
+        </div>
+        <div class="hidden md:flex col-span-2 flex-col items-center gap-0.5"><span class="text-xl font-black ${tw(f.currentAvg)}">${f.currentAvg}</span><span class="text-[10px] text-slate-500 font-bold">${f.formPoints>0?'+':''}${f.formPoints} form</span>${trendBadge(f)}</div>
+        <div class="hidden md:flex col-span-2 justify-center items-center gap-1"><span class="text-lg font-black text-amber-400">${f.price}</span><span class="text-xs text-amber-500/50 font-bold">CP</span></div>
+        <div class="hidden md:flex col-span-2 justify-center"><span class="text-lg font-black ${tw(lat?.score||0)} bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700/50">${lat?.score.toFixed(1)||'&mdash;'}</span></div>
+        <div class="hidden md:flex col-span-1 justify-end gap-1">
+          <button onclick="event.stopPropagation();addToCompare('${f.id}')" class="p-2 rounded-lg transition hover:bg-slate-700 ${compareSelection.includes(f.id)?'text-indigo-400':'text-slate-500 hover:text-indigo-400'}" title="Compare"><i data-lucide="${compareSelection.includes(f.id)?'check-circle':'swords'}" class="w-4 h-4"></i></button>
+          <button onclick="event.stopPropagation();handleRecruit('${f.id}')" class="p-2 rounded-lg transition ${isOwned?'bg-red-500/10 text-red-400 hover:bg-red-500/20':'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'}"><i data-lucide="${isOwned?'x':'user-plus'}" class="w-4 h-4"></i></button>
+        </div>
+      </div>`;}).join('')}
+  </div>`;
+  lucide.createIcons();
+}
+
+function renderProfile(id){
+  const cqs=document.getElementById('cqSection');if(cqs)cqs.classList.add('hidden');
+  const f=farmers.find(x=>x.id===id),c=document.getElementById('view-container');
+  const isOwned=wallet.roster.includes(f.id),isCap=wallet.captain===f.id,isCmp=compareSelection.includes(f.id);
+  const cls=f.isKing?'glass-card signature-card':'glass-card';
+  c.innerHTML=`<div class="animate-slide-up pb-10">
+    <button onclick="renderLeaderboard()" class="mb-8 flex items-center gap-2 text-slate-400 hover:text-white transition font-bold text-sm uppercase tracking-widest"><i data-lucide="chevron-left" class="w-4 h-4"></i> Back</button>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="lg:col-span-1 space-y-6">
+        <div class="${cls} p-8 rounded-[2rem] text-center border-b-4 ${isOwned?'border-emerald-500':'border-indigo-500'}">
+          <div class="w-24 h-24 rounded-3xl bg-indigo-600 mx-auto mb-6 flex items-center justify-center text-4xl font-black shadow-2xl shadow-indigo-500/40 relative">${f.name[0]}${isOwned?'<div class="absolute -top-2 -right-2 bg-emerald-500 text-white px-2 py-0.5 text-[9px] font-black rounded-full border-2 border-slate-900">OWNED</div>':''}</div>
+          <h2 class="text-3xl font-black mb-1 flex items-center justify-center gap-2">${f.name}${f.isKing?'<i data-lucide="crown" class="w-6 h-6 text-amber-400 fill-amber-400"></i>':''}${isCap?'<span class="captain-badge text-2xl">(C)</span>':''}</h2>
+          <p class="text-indigo-400 font-bold mb-6 uppercase tracking-widest text-xs">${f.grade.label}</p>
+          <div class="grid grid-cols-2 gap-3 mb-6">
+            <div class="bg-slate-900/50 p-3 rounded-2xl border border-slate-800"><span class="block text-[8px] text-slate-500 uppercase font-black mb-1">Valuation</span><span class="text-xl font-black text-amber-400">${f.price} CP</span></div>
+            <div class="bg-slate-900/50 p-3 rounded-2xl border border-slate-800"><span class="block text-[8px] text-slate-500 uppercase font-black mb-1">14d Avg</span><span class="text-xl font-black ${tw(f.currentAvg)}">${f.currentAvg}</span></div>
+            <div class="bg-slate-900/50 p-3 rounded-2xl border border-slate-800"><span class="block text-[8px] text-slate-500 uppercase font-black mb-1">Form</span><span class="text-xl font-black ${f.formPoints>0?'text-emerald-400':f.formPoints<0?'text-red-400':'text-slate-400'}">${f.formPoints>0?'+':''}${f.formPoints}</span></div>
+            <div class="bg-slate-900/50 p-3 rounded-2xl border border-slate-800"><span class="block text-[8px] text-slate-500 uppercase font-black mb-1">Stars</span><span class="text-xl font-black text-yellow-400">${f.stats.stars} &#9733;</span></div>
+          </div>
+          <div class="flex gap-2 mb-3">
+            <button onclick="addToCompare('${f.id}')" class="flex-1 py-3 rounded-xl font-black uppercase tracking-widest text-xs transition flex items-center justify-center gap-2 ${isCmp?'bg-indigo-500 text-white':'bg-slate-800 text-slate-400 hover:bg-slate-700'}"><i data-lucide="${isCmp?'check':'swords'}" class="w-4 h-4"></i>${isCmp?'Selected':'Compare'}</button>
+            <button onclick="handleRecruit('${f.id}')" class="flex-[2] py-3 rounded-xl font-black uppercase tracking-widest text-xs transition flex items-center justify-center gap-2 ${isOwned?'bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50':'bg-emerald-500 hover:bg-emerald-400 text-white'}"><i data-lucide="${isOwned?'user-minus':'user-plus'}" class="w-4 h-4"></i>${isOwned?`Release (+${Math.floor(f.price/2)} CP)`:`Recruit (-${f.price} CP)`}</button>
+          </div>
+          ${isOwned?`<button onclick="toggleCaptain('${f.id}')" class="w-full py-3 rounded-xl font-black uppercase tracking-widest text-xs transition flex items-center justify-center gap-2 ${isCap?'bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30':'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'}">\uD83C\uDF96\uFE0F ${isCap?'Remove as Captain':'Make Captain (C)'}</button>`:''}
+        </div>
+        <div class="glass-card p-6 rounded-3xl"><h3 class="font-black text-xs uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Match History</h3>
+          <div class="space-y-2 max-h-72 overflow-y-auto custom-scroll pr-2">${f.scores.map(s=>`<div class="flex justify-between items-center p-3 bg-slate-900/40 rounded-xl border border-slate-800/50"><div class="flex items-center gap-2"><span class="text-xs font-bold text-slate-500">${s.date}</span>${s.score===dailyBest[s.date]?'<i data-lucide="star" class="w-3.5 h-3.5 text-yellow-500 fill-yellow-500"></i>':''}</div><span class="font-black ${tw(s.score)}">${s.score.toFixed(1)}</span></div>`).join('')}</div>
+        </div>
+      </div>
+      <div class="lg:col-span-2 space-y-6">
+        <div class="glass-card p-8 rounded-3xl" style="height:350px"><h3 class="font-black text-xs uppercase tracking-widest text-slate-400 mb-6">Attribute DNA</h3><canvas id="attributeChart"></canvas></div>
+        <div class="glass-card p-8 rounded-3xl"><h3 class="font-black text-xs uppercase tracking-widest text-slate-400 mb-6">Performance Trajectory (Last 10)</h3><canvas id="historyChart" height="140"></canvas></div>
+      </div>
+    </div>
+  </div>`;
+  lucide.createIcons();initCharts(f);
+}
+
+function initCharts(f){
+  new Chart(document.getElementById('attributeChart'),{type:'radar',data:{labels:['Creativity','Consistency','Attendance','Presence','Quality'],datasets:[{data:Object.values(f.attributes),backgroundColor:'rgba(99,102,241,0.2)',borderColor:'#6366f1',borderWidth:3,pointBackgroundColor:'#6366f1'}]},options:{scales:{r:{min:0,max:100,ticks:{display:false},grid:{color:'rgba(255,255,255,0.05)'},pointLabels:{color:'#64748b',font:{weight:'bold',size:10}}}},plugins:{legend:{display:false}}}});
+  const h=[...f.scores].reverse().slice(-10);
+  new Chart(document.getElementById('historyChart'),{type:'bar',data:{labels:h.map(s=>s.date.slice(5)),datasets:[{data:h.map(s=>s.score),backgroundColor:h.map(s=>hex(s.score)),borderRadius:8}]},options:{plugins:{legend:{display:false}},scales:{y:{min:0,max:10,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#64748b',font:{weight:'bold',size:10}}},x:{ticks:{color:'#64748b',font:{weight:'bold',size:9}},grid:{display:false}}}}});
+}
+
+function addToCompare(id){
+  if(compareSelection.includes(id))compareSelection=compareSelection.filter(x=>x!==id);
+  else{if(compareSelection.length>=2)compareSelection.shift();compareSelection.push(id);}
+  document.getElementById('compareBtn').innerHTML=`<i data-lucide="swords" class="w-4 h-4"></i> Compare (${compareSelection.length})`;
+  lucide.createIcons();
+  const hdr=document.querySelector('#view-container h2');
+  const f=farmers.find(x=>x.id===id);
+  if(hdr&&hdr.innerText.includes(f.name))renderProfile(id);else renderLeaderboard();
+}
+
+function toggleCompareMode(){
+  const m=document.getElementById('compareModal');
+  m.classList.toggle('hidden');
+  if(!m.classList.contains('hidden'))renderComparison();
+}
+
+function renderComparison(){
+  const content=document.getElementById('compareContent');
+  if(compareSelection.length<2){content.innerHTML='<div class="text-center py-20 text-slate-500 font-bold uppercase tracking-widest">Select two farmers to compare</div>';return;}
+  const f1=farmers.find(x=>x.id===compareSelection[0]),f2=farmers.find(x=>x.id===compareSelection[1]);
+  const wins=(v1,v2,hi=true)=>hi?v1>v2:v1<v2;
+  const statRow=(label,v1,v2,hi=true,fmt=x=>x)=>{const w1=wins(v1,v2,hi),w2=wins(v2,v1,hi);return`<div class="flex items-center gap-3 py-2.5 border-b border-slate-800/40"><div class="flex-1 text-right"><span class="font-black ${w1?'text-white':'text-slate-500'}">${fmt(v1)}</span>${w1?'<i data-lucide="check-circle" class="w-3 h-3 text-indigo-400 inline ml-1"></i>':''}</div><div class="w-28 text-center text-[10px] font-black uppercase tracking-wider text-slate-500 shrink-0">${label}</div><div class="flex-1 text-left">${w2?'<i data-lucide="check-circle" class="w-3 h-3 text-pink-400 inline mr-1"></i>':''}<span class="font-black ${w2?'text-white':'text-slate-500'}">${fmt(v2)}</span></div></div>`;};
+  const distBars=(f)=>{
+    const b={'Elite \u22659':0,'Great 8+':0,'Good 7+':0,'OK 6.5+':0,'Poor <6.5':0};
+    f.scores.slice(0,14).forEach(s=>{if(s.score>=9)b['Elite \u22659']++;else if(s.score>=8)b['Great 8+']++;else if(s.score>=7)b['Good 7+']++;else if(s.score>=6.5)b['OK 6.5+']++;else b['Poor <6.5']++;});
+    const dc={'Elite \u22659':'#a855f7','Great 8+':'#3b82f6','Good 7+':'#22c55e','OK 6.5+':'#eab308','Poor <6.5':'#ef4444'};
+    return Object.entries(b).map(([l,c])=>`<div class="mb-2"><div class="flex justify-between text-[10px] text-slate-500 mb-1 font-bold"><span>${l}</span><span>${c}g</span></div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:${Math.round(c/14*100)}%;background:${dc[l]}"></div></div></div>`).join('');
+  };
+  // Last 10 scores for H2H chart
+  const h1=f1.scores.slice(0,10).reverse(),h2=f2.scores.slice(0,10).reverse();
+  const allDates=[...new Set([...h1.map(s=>s.date),...h2.map(s=>s.date)])].sort();
+  const getScore=(sc,date)=>{const s=sc.find(x=>x.date===date);return s?s.score:null;};
+  // CP valuation history
+  const ph1=(f1.stats.priceHist||[]).filter(x=>x!=null).reverse();
+  const ph2=(f2.stats.priceHist||[]).filter(x=>x!=null).reverse();
+  const phLen=Math.max(ph1.length,ph2.length,1);
+  const phLbls=Array.from({length:phLen},(_,i)=>i===phLen-1?'Now':`-${phLen-1-i}`);
+  const allScores=[...h1,...h2].map(s=>s.score);
+  const yMin=Math.max(4,Math.floor(Math.min(...allScores)-0.5));
+  const yMax=Math.min(10,Math.ceil(Math.max(...allScores)+0.5));
+
+  content.innerHTML=`
+    <div class="grid grid-cols-2 gap-6 mb-6">
+      <div class="glass-card p-6 rounded-2xl border-t-4 border-indigo-500">
+        <h3 class="text-2xl font-black text-white mb-1 flex items-center gap-2">${f1.name}${f1.isKing?'<i data-lucide="crown" class="w-5 h-5 text-amber-400 fill-amber-400"></i>':''}</h3>
+        <p class="text-indigo-400 font-bold text-xs uppercase mb-2">${f1.grade.label}</p>
+        <p class="text-4xl font-black ${tw(f1.currentAvg)} mb-1">${f1.currentAvg}</p>
+        <p class="text-[10px] text-slate-500 uppercase font-bold mb-2">14-day avg</p>
+        ${trendBadge(f1)}
+      </div>
+      <div class="glass-card p-6 rounded-2xl border-t-4 border-pink-500">
+        <h3 class="text-2xl font-black text-white mb-1 flex items-center gap-2">${f2.name}${f2.isKing?'<i data-lucide="crown" class="w-5 h-5 text-amber-400 fill-amber-400"></i>':''}</h3>
+        <p class="text-pink-400 font-bold text-xs uppercase mb-2">${f2.grade.label}</p>
+        <p class="text-4xl font-black ${tw(f2.currentAvg)} mb-1">${f2.currentAvg}</p>
+        <p class="text-[10px] text-slate-500 uppercase font-bold mb-2">14-day avg</p>
+        ${trendBadge(f2)}
+      </div>
+    </div>
+    <div class="glass-card p-6 rounded-2xl mb-6">
+      <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Score History &mdash; Head to Head</h4>
+      <p class="text-[10px] text-slate-600 font-bold mb-3">Last 10 scores on the same chart &mdash; coloured dots = score band</p>
+      <div class="flex items-center gap-8 mb-4">
+        <div class="flex items-center gap-2"><span class="w-8 h-0.5 bg-indigo-500 rounded inline-block"></span><span class="text-xs font-black text-indigo-400">${f1.name}</span></div>
+        <div class="flex items-center gap-2"><span class="w-8 h-0.5 bg-pink-500 rounded inline-block"></span><span class="text-xs font-black text-pink-400">${f2.name}</span></div>
+      </div>
+      <canvas id="h2hChart" height="90"></canvas>
+    </div>
+    <div class="glass-card p-6 rounded-2xl mb-6">
+      <h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">CP Valuation History &mdash; Last 5 Updates</h4>
+      <p class="text-[10px] text-slate-600 font-bold mb-4">How much each farmer was worth at each of the last 5 score updates</p>
+      <canvas id="valChart" height="90"></canvas>
+    </div>
+    <div class="glass-card p-6 rounded-2xl mb-6">
+      <h4 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 text-center">Head-to-Head Stats</h4>
+      ${statRow('Best (14d)',f1.stats.best14,f2.stats.best14,true,v=>v.toFixed(1))}
+      ${statRow('Worst (14d)',f1.stats.worst14,f2.stats.worst14,true,v=>v.toFixed(1))}
+      ${statRow('Profit Rate',f1.stats.profitRate,f2.stats.profitRate,true,v=>v+'%')}
+      ${statRow('Form Points',f1.formPoints,f2.formPoints,true,v=>(v>0?'+':'')+v)}
+      ${statRow('Stars',f1.stats.stars,f2.stats.stars,true)}
+      ${statRow('Valuation',f1.price,f2.price,false,v=>v+' CP')}
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="glass-card p-6 rounded-2xl"><h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Attribute DNA</h4><canvas id="radarChart"></canvas></div>
+      <div class="glass-card p-6 rounded-2xl"><h4 class="text-xs font-black uppercase tracking-widest text-indigo-400 mb-4">${f1.name} &mdash; Distribution</h4>${distBars(f1)}</div>
+      <div class="glass-card p-6 rounded-2xl"><h4 class="text-xs font-black uppercase tracking-widest text-pink-400 mb-4">${f2.name} &mdash; Distribution</h4>${distBars(f2)}</div>
+    </div>`;
+  lucide.createIcons();
+
+  // H2H overlaid score chart
+  new Chart(document.getElementById('h2hChart'),{
+    type:'line',
+    data:{
+      labels:allDates.map(d=>d.slice(5)),
+      datasets:[
+        {label:f1.name,data:allDates.map(d=>getScore(h1,d)),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.06)',fill:true,tension:0.35,borderWidth:2.5,
+          pointRadius:allDates.map(d=>{const s=getScore(h1,d);return s!=null?6:0;}),
+          pointBackgroundColor:allDates.map(d=>{const s=getScore(h1,d);return s!=null?hex(s):'transparent';}),
+          pointBorderColor:allDates.map(d=>{const s=getScore(h1,d);return s!=null?hex(s):'transparent';}),
+          pointBorderWidth:2,spanGaps:true},
+        {label:f2.name,data:allDates.map(d=>getScore(h2,d)),borderColor:'#ec4899',backgroundColor:'rgba(236,72,153,.06)',fill:true,tension:0.35,borderWidth:2.5,
+          pointRadius:allDates.map(d=>{const s=getScore(h2,d);return s!=null?6:0;}),
+          pointBackgroundColor:allDates.map(d=>{const s=getScore(h2,d);return s!=null?hex(s):'transparent';}),
+          pointBorderColor:allDates.map(d=>{const s=getScore(h2,d);return s!=null?hex(s):'transparent';}),
+          pointBorderWidth:2,spanGaps:true}
+      ]
+    },
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      scales:{
+        y:{min:yMin,max:yMax,grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#475569',font:{weight:'bold',size:9},callback:v=>v.toFixed(1)},border:{display:false}},
+        x:{grid:{display:false},ticks:{color:'#475569',font:{weight:'bold',size:9}},border:{display:false}}
+      },
+      plugins:{legend:{display:false},
+        tooltip:{backgroundColor:'rgba(15,23,42,.97)',titleColor:'#94a3b8',bodyColor:'#fff',padding:10,borderWidth:1,borderColor:'rgba(255,255,255,.08)',
+          callbacks:{label:ctx=>ctx.parsed.y!=null?` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}`:null}}}
+    }
+  });
+
+  // CP Valuation history chart
+  new Chart(document.getElementById('valChart'),{
+    type:'line',
+    data:{labels:phLbls,datasets:[
+      {label:f1.name,data:ph1,borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.08)',fill:true,tension:0.4,pointRadius:6,pointBackgroundColor:'#6366f1',borderWidth:2.5},
+      {label:f2.name,data:ph2,borderColor:'#ec4899',backgroundColor:'rgba(236,72,153,.08)',fill:true,tension:0.4,pointRadius:6,pointBackgroundColor:'#ec4899',borderWidth:2.5}
+    ]},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      scales:{
+        y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#475569',font:{weight:'bold',size:9},callback:v=>v+' CP'},border:{display:false}},
+        x:{grid:{display:false},ticks:{color:'#475569',font:{weight:'bold',size:9}},border:{display:false}}
+      },
+      plugins:{legend:{labels:{color:'#94a3b8',font:{weight:'bold',size:10},boxWidth:12}},
+        tooltip:{backgroundColor:'rgba(15,23,42,.97)',titleColor:'#94a3b8',bodyColor:'#fff',padding:10,callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y} CP`}}}
+    }
+  });
+
+  // Radar
+  new Chart(document.getElementById('radarChart'),{
+    type:'radar',
+    data:{labels:['Creativity','Consistency','Attendance','Presence','Quality'],datasets:[
+      {label:f1.name,data:Object.values(f1.attributes),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.15)',pointBackgroundColor:'#6366f1',borderWidth:2},
+      {label:f2.name,data:Object.values(f2.attributes),borderColor:'#ec4899',backgroundColor:'rgba(236,72,153,.15)',pointBackgroundColor:'#ec4899',borderWidth:2}
+    ]},
+    options:{scales:{r:{min:0,max:100,ticks:{display:false},grid:{color:'rgba(255,255,255,.05)'},pointLabels:{color:'#64748b',font:{weight:'bold',size:10}}}},
+      plugins:{legend:{labels:{color:'#94a3b8',font:{weight:'bold',size:10},boxWidth:12}}}}
+  });
+}
+
+const TOTAL_TUT=9;let tutStep=0;
+function buildDots(){const el=document.getElementById('tutDots');el.innerHTML='';for(let i=0;i<TOTAL_TUT;i++){const d=document.createElement('div');d.className=`tutorial-dot${i===tutStep?' active':''}`;el.appendChild(d);}}
+function updateTut(){for(let i=0;i<TOTAL_TUT;i++){const s=document.getElementById(`tutStep${i}`);if(s)s.classList.toggle('active',i===tutStep);}buildDots();document.getElementById('tutPrevBtn').classList.toggle('hidden',tutStep===0);document.getElementById('tutNextBtn').innerText=tutStep===TOTAL_TUT-1?'✓ Got it!':'Next →';}
+function tutNext(){if(tutStep<TOTAL_TUT-1){tutStep++;updateTut();}else closeTutorial();}
+function tutPrev(){if(tutStep>0){tutStep--;updateTut();}}
+function openTutorial(){tutStep=0;document.getElementById('tutorialOverlay').classList.remove('hidden');updateTut();}
+function closeTutorial(){document.getElementById('tutorialOverlay').classList.add('hidden');localStorage.setItem(TUT_KEY,'1');}
+
+function loadAcct(){const sv=localStorage.getItem(ACCT_KEY)||localStorage.getItem('cr_account');if(sv){accountUser=JSON.parse(sv);startAutoSyncFn();}}
+function saveAcct(u){accountUser=u;localStorage.setItem(ACCT_KEY,JSON.stringify(u));}
+function openAccountModal(){document.getElementById('accountModal').classList.remove('hidden');lucide.createIcons();renderAcctPanel();loadGlobalLb();}
+function closeAccountModal(){document.getElementById('accountModal').classList.add('hidden');}
+function renderAcctPanel(){
+  const panel=document.getElementById('accountPanel');
+  if(accountUser){
+    const nw=parseFloat(document.getElementById('netWorth').innerText)||0;
+    const ls=accountUser.lastSync?new Date(accountUser.lastSync).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Never';
+    const avatar=accountUser.avatar?`<img src="${accountUser.avatar}" class="w-12 h-12 rounded-full object-cover" style="box-shadow:0 0 0 3px #6366f1,0 0 0 5px rgba(99,102,241,0.2)"/>`:`<div class="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-lg font-black" style="box-shadow:0 0 0 3px #6366f1">${accountUser.username[0].toUpperCase()}</div>`;
+    panel.innerHTML=`<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="avatar-upload relative" onclick="document.getElementById('avatarInput').click()" title="Change photo">${avatar}<div class="avatar-overlay rounded-full"><i data-lucide="camera" class="w-4 h-4 text-white"></i></div></div>
+        <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="handleAvatar(event)">
+        <div><div class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-0.5">Signed in as</div><div class="text-xl font-black text-white">${accountUser.username}</div><div class="text-xs text-slate-500 mt-0.5">Net worth: <span class="text-emerald-400 font-bold">${nw.toFixed(0)} CP</span> · Last synced: ${ls} <span class="ml-1 text-[10px] text-indigo-400 font-bold">· Auto-syncs hourly</span></div></div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="publishLb()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-black uppercase tracking-wider rounded-xl transition flex items-center gap-2"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync</button>
+        <button onclick="signOut()" class="px-4 py-2 bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-slate-400 text-xs font-black uppercase tracking-wider rounded-xl transition">Sign Out</button>
+      </div></div>`;
+  }else{
+    panel.innerHTML=`<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"><div><div class="text-sm font-bold text-white mb-1">Create a free account</div><div class="text-xs text-slate-400">Appear on the global leaderboard. Score syncs automatically.</div></div><div class="flex gap-2 w-full sm:w-auto"><input type="text" id="usernameInput" placeholder="Pick a username..." maxlength="20" class="bg-slate-800 border border-slate-700 focus:border-indigo-500 outline-none text-white text-sm px-3 py-2 rounded-xl w-full sm:w-48 transition"><button onclick="createAcct()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-wider rounded-xl transition whitespace-nowrap flex items-center gap-2"><i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Join</button></div></div>`;
+  }
+  lucide.createIcons();
+}
+function handleAvatar(e){
+  const file=e.target.files[0];if(!file)return;
+  if(file.size>500*1024)return toast('Image too large (max 500KB)','error');
+  const r=new FileReader();r.onload=ev=>{accountUser.avatar=ev.target.result;saveAcct(accountUser);renderAcctPanel();toast('Profile picture updated!','success');};r.readAsDataURL(file);
+}
+async function createAcct(){
+  const input=document.getElementById('usernameInput'),username=input?.value.trim();
+  if(!username||username.length<2)return toast('Username too short','error');
+  if(!/^[a-zA-Z0-9_ \-.]+$/.test(username))return toast('Only letters, numbers, spaces, _ - .','error');
+  const userId=`user_${username.toLowerCase().replace(/\s/g,'_')}_${Math.random().toString(36).slice(2,7)}`;
+  saveAcct({userId,username,lastSync:null,avatar:null});
+  renderAcctPanel();toast(`Welcome, ${username}! 🎉`,'gold');
+  await publishLb();startAutoSyncFn();
+}
+function signOut(){accountUser=null;localStorage.removeItem(ACCT_KEY);renderAcctPanel();toast('Signed out','neutral');}
+function startAutoSyncFn(){if(autoSync)clearInterval(autoSync);autoSync=setInterval(silentPublish,AUTO_SYNC_MS);}
+async function silentPublish(){
+  if(!accountUser||!APPS_SCRIPT_URL)return;
+  const nw=parseFloat(document.getElementById('netWorth').innerText)||0;
+  const roster=wallet.roster.map(id=>{const f=farmers.find(x=>x.id===id);return f?f.name:id;});
+  const captain=wallet.captain?(farmers.find(x=>x.id===wallet.captain)?.name||null):null;
+  try{await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({userId:accountUser.userId,username:accountUser.username,netWorth:nw,roster,captain})});accountUser.lastSync=Date.now();localStorage.setItem(ACCT_KEY,JSON.stringify(accountUser));}catch{}
+}
+async function publishLb(){
+  if(!accountUser)return toast('Create an account first','error');
+  const nw=parseFloat(document.getElementById('netWorth').innerText)||0;
+  const roster=wallet.roster.map(id=>{const f=farmers.find(x=>x.id===id);return f?f.name:id;});
+  const captain=wallet.captain?(farmers.find(x=>x.id===wallet.captain)?.name||null):null;
+  try{
+    const res=await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({userId:accountUser.userId,username:accountUser.username,netWorth:nw,roster,captain})});
+    const json=await res.json();if(!json.ok)throw new Error(json.error);
+    accountUser.lastSync=Date.now();localStorage.setItem(ACCT_KEY,JSON.stringify(accountUser));
+    toast('Leaderboard updated! 🏆','success');renderAcctPanel();loadGlobalLb();
+  }catch{toast('Could not publish. Check connection.','error');}
+}
+async function loadGlobalLb(){
+  const list=document.getElementById('globalLbList');
+  list.innerHTML='<div class="p-8 text-center"><div class="loading-spinner mx-auto mb-3"></div><p class="text-slate-500 text-sm font-bold animate-pulse">FETCHING MANAGERS...</p></div>';
+  try{
+    const res=await fetch(APPS_SCRIPT_URL),json=await res.json();
+    if(!json.ok)throw new Error();
+    const entries=(json.entries||[]).sort((a,b)=>b.netWorth-a.netWorth);
+    document.getElementById('lbLastUpdated').innerText=`${entries.length} manager${entries.length!==1?'s':''} registered`;
+    if(!entries.length){list.innerHTML='<div class="p-8 text-center text-slate-500 font-bold text-sm">No managers yet. Be first!</div>';return;}
+    list.innerHTML=entries.map((e,i)=>{
+      const isMe=accountUser&&e.username===accountUser.username;
+      const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+      const rowCls=i===0?'lb-gold':i===1?'lb-silver':i===2?'lb-bronze':'';
+      const roster=e.roster?.length?e.roster.map(n=>{const isCap=e.captain&&e.captain===n;return`<span class="px-2 py-0.5 bg-slate-800 text-slate-300 rounded-md text-[10px] font-bold border border-slate-700">${n}${isCap?'<span class="captain-badge ml-0.5">(C)</span>':''}</span>`;}).join(''):'<span class="text-slate-600 text-[10px]">No roster</span>';
+      const delBtn=isAdmin?`<button onclick="deleteUser('${e.userId}','${e.username.replace(/'/g,"\\'")}') " class="ml-2 p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition" title="Remove"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`:'';
+      return`<div class="lb-row p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${rowCls} ${isMe?'bg-indigo-600/10':''}"><div class="w-10 text-center font-black text-lg ${i===0?'text-amber-400':i===1?'text-slate-300':i===2?'text-amber-600':'text-slate-600'}">${medal}</div><div class="flex-1 min-w-0"><div class="font-black text-white flex items-center gap-2 flex-wrap">${e.username}${isMe?'<span class="text-[9px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-black uppercase tracking-wider">You</span>':''}${delBtn}</div><div class="flex flex-wrap gap-1 mt-1">${roster}</div></div><div class="text-right shrink-0"><div class="text-lg font-black text-emerald-400">${e.netWorth.toFixed(0)}</div><div class="text-[10px] text-slate-500 font-bold uppercase">CP Net Worth</div></div></div>`;
+    }).join('');
+    lucide.createIcons();
+  }catch{list.innerHTML='<div class="p-8 text-center text-slate-500 font-bold text-sm">Failed to load leaderboard.</div>';}
+}
+function toggleAdminMode(){
+  if(isAdmin){isAdmin=false;document.getElementById('adminToggleBtn').classList.replace('text-red-400','text-slate-700');loadGlobalLb();return;}
+  const pw=prompt('Admin password:');if(!pw)return;
+  isAdmin=true;window._adminPw=pw;
+  document.getElementById('adminToggleBtn').classList.replace('text-slate-700','text-red-400');
+  toast('Admin mode on','error');loadGlobalLb();
+}
+async function deleteUser(userId,username){
+  if(!confirm(`Remove "${username}"?`))return;
+  try{const res=await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'delete',userId,adminPassword:window._adminPw})});const json=await res.json();if(!json.ok){toast(json.error==='Unauthorised'?'Wrong password.':'Delete failed.','error');return;}toast(`${username} removed.`,'success');loadGlobalLb();}catch{toast('Delete failed.','error');}
+}
+
+window.onload=init;
+</script>
 </body>
 </html>
