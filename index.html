@@ -136,7 +136,7 @@
 <div id="toast" class="fixed bottom-10 right-10 bg-slate-900 border border-slate-700 text-white px-6 py-4 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-bold flex items-center gap-3"><span id="toastMsg"></span></div>
 <script>
 const SHEET_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vSMTqwP3ViGcOKh0lYRGL9rdAL-Q84U85iZSLTqwdT3OGXKhMvIsI-pNC_cbRjcod0teMJ7YbRXREhy/pub?gid=607342177&single=true&output=csv';
-const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbxx2J-o4h95seQFBQw6ClMdtWv6Yh6EDxRidFfXvG3HdenOz26u7Bh5jBJzZP9ekkkY1A/exec';
+const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycby1N-4rNwKeSie4QMGD7MT4Ynh2rO3mMJKYz4qzU1fjTCb0BK8pIhz_thMjU2lmJVcdQg/exec';
 const MAX_ROSTER=4,AUTO_SYNC_MS=3600000,SAVE_KEY='cr4_wallet_v1',ACCT_KEY='cr4_account_v1',TUT_KEY='cr4_tut_done';
 let farmers=[],compareSelection=[],dailyBest={},cdTimer=null,autoSync=null,accountUser=null,isAdmin=false;
 let wallet={balance:100,roster:[],captain:null,lastMatchDate:null};
@@ -176,7 +176,7 @@ function processData(rows){
     const avg=r14.reduce((a,b)=>a+b.score,0)/r14.length;
     const pAvg=r14p.length?r14p.reduce((a,b)=>a+b.score,0)/r14p.length:avg;
     const l5=f.scores.slice(0,5);
-    let fp=0;l5.forEach(s=>{if(s.score>=9)fp+=4;else if(s.score>=8)fp+=2;else if(s.score>=7)fp+=1;else if(s.score>=6)fp-=1;else fp-=2;});
+    let fp=0;l5.forEach(s=>{if(s.score>=9)fp+=4;else if(s.score>=8)fp+=2;else if(s.score>=7)fp+=1;else if(s.score>=6.5)fp+=0;else fp-=2;});
     let stars=0;f.scores.forEach(s=>{if(dailyBest[s.date]&&s.score>=dailyBest[s.date])stars++;});
     const priceHist=[0,1,2,3,4].map(i=>{const sl=f.scores.slice(i,i+14);if(!sl.length)return null;const a=sl.reduce((x,y)=>x+y.score,0)/sl.length;return Math.floor(Math.max(10,(a-6)*40));});
     return{...f,
@@ -274,9 +274,15 @@ function handleRecruit(id){
 
 function toggleCaptain(id){
   if(!wallet.roster.includes(id))return toast('Recruit this farmer first','error');
-  wallet.captain=wallet.captain===id?null:id;
+  if(wallet.captain===id)return toast('Captain can only be changed by selling them','neutral');
   const f=farmers.find(x=>x.id===id);
-  toast(wallet.captain===id?`${f.name} is now Captain! \uD83C\uDF96\uFE0F`:`${f.name} removed as Captain`,wallet.captain===id?'gold':'neutral');
+  const msg=wallet.captain
+    ?`Replace ${(farmers.find(x=>x.id===wallet.captain)||{name:'current captain'}).name} with ${f.name} as Captain?\n\nWarning: Captains can only be changed by selling them.`
+    :`Set ${f.name} as your Captain?\n\nThey double your CP rewards AND penalties. You can only change captain by selling them.`;
+  if(!confirm(msg))return;
+  wallet.captain=id;
+  localStorage.setItem(SAVE_KEY,JSON.stringify(wallet));
+  toast(`${f.name} is now Captain! 🎖️`,'gold');
   updateHUD();renderLeaderboard();renderProfile(id);
 }
 
@@ -329,13 +335,14 @@ function renderLeaderboard(){
       const cls=f.isKing?'glass-card signature-card':'glass-card';
       return`<div class="${cls} grid grid-cols-12 items-center p-5 rounded-2xl cursor-pointer hover:bg-slate-800/50" onclick="renderProfile('${f.id}')">
         <div class="col-span-2 md:col-span-1 font-black text-slate-500 text-lg italic flex flex-col items-center">#${i+1}${rankArrow(f.rankChange)}</div>
-        <div class="col-span-10 md:col-span-4 flex items-center gap-4">
+        <div class="col-span-7 md:col-span-4 flex items-center gap-4">
           <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-xl font-black shadow-lg relative shrink-0">${f.name[0]}${isOwned?'<div class="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-900"></div>':''}</div>
           <div><div class="font-black text-white flex items-center gap-1.5 flex-wrap">${f.name}${f.isKing?'<i data-lucide="crown" class="w-3.5 h-3.5 text-amber-400 fill-amber-400"></i>':''}${isBest?'<i data-lucide="star" class="w-3.5 h-3.5 text-yellow-500 fill-yellow-500"></i>':''}${isCap?'<span class="captain-badge text-sm">(C)</span>':''}</div>
           <span class="text-[10px] px-2 py-0.5 rounded-full border ${f.grade.color} font-bold">${f.grade.label}</span>
           <div class="flex gap-1 mt-1">${l5.map(s=>`<div class="w-2 h-2 rounded-sm ${bg(s.score)}" title="${s.score}"></div>`).join('')}</div></div>
         </div>
-        <div class="hidden md:flex col-span-2 flex-col items-center gap-0.5"><span class="text-xl font-black ${tw(f.currentAvg)}">${f.currentAvg}</span><span class="text-[10px] text-slate-500 font-bold">${f.formPoints>0?'+':''}${f.formPoints} form</span>${trendBadge(f)}</div>
+        <div class="flex md:hidden col-span-3 flex-col items-center justify-center"><span class="text-base font-black ${tw(f.currentAvg)}">${f.currentAvg}</span>${trendBadge(f)}</div>
+        <div class="hidden md:flex col-span-2 flex-col items-center gap-0.5"><span class="text-xl font-black ${tw(f.currentAvg)}">${f.currentAvg}</span>${trendBadge(f)}</div>
         <div class="hidden md:flex col-span-2 justify-center items-center gap-1"><span class="text-lg font-black text-amber-400">${f.price}</span><span class="text-xs text-amber-500/50 font-bold">CP</span></div>
         <div class="hidden md:flex col-span-2 justify-center"><span class="text-lg font-black ${tw(lat?.score||0)} bg-slate-800/50 px-3 py-1 rounded-lg border border-slate-700/50">${lat?.score.toFixed(1)||'&mdash;'}</span></div>
         <div class="hidden md:flex col-span-1 justify-end gap-1">
@@ -388,7 +395,51 @@ function renderProfile(id){
 function initCharts(f){
   new Chart(document.getElementById('attributeChart'),{type:'radar',data:{labels:['Creativity','Consistency','Attendance','Presence','Quality'],datasets:[{data:Object.values(f.attributes),backgroundColor:'rgba(99,102,241,0.2)',borderColor:'#6366f1',borderWidth:3,pointBackgroundColor:'#6366f1'}]},options:{scales:{r:{min:0,max:100,ticks:{display:false},grid:{color:'rgba(255,255,255,0.05)'},pointLabels:{color:'#64748b',font:{weight:'bold',size:10}}}},plugins:{legend:{display:false}}}});
   const h=[...f.scores].reverse().slice(-10);
-  new Chart(document.getElementById('historyChart'),{type:'bar',data:{labels:h.map(s=>s.date.slice(5)),datasets:[{data:h.map(s=>s.score),backgroundColor:h.map(s=>hex(s.score)),borderRadius:8}]},options:{plugins:{legend:{display:false}},scales:{y:{min:0,max:10,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#64748b',font:{weight:'bold',size:10}}},x:{ticks:{color:'#64748b',font:{weight:'bold',size:9}},grid:{display:false}}}}});
+  const hAvg=h.reduce((a,b)=>a+b.score,0)/h.length;
+  const hMin=Math.max(0,Math.floor(Math.min(...h.map(s=>s.score))-0.8));
+  const hMax=Math.min(10,Math.ceil(Math.max(...h.map(s=>s.score))+0.8));
+  new Chart(document.getElementById('historyChart'),{
+    type:'bar',
+    data:{
+      labels:h.map(s=>s.score.toFixed(1)),
+      datasets:[
+        {type:'line',data:h.map(()=>hAvg),borderColor:'rgba(251,191,36,0.7)',borderWidth:2,borderDash:[6,4],pointRadius:0,fill:false,order:0},
+        {type:'bar',data:h.map(s=>s.score),backgroundColor:h.map(s=>hex(s.score)),borderRadius:6,borderSkipped:false,order:1}
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'rgba(15,23,42,.95)',
+          titleColor:'#94a3b8',bodyColor:'#fff',padding:10,
+          callbacks:{
+            title:ctx=>h[ctx[0].dataIndex].date,
+            label:ctx=>ctx.datasetIndex===1?` Score: ${ctx.parsed.y.toFixed(1)}`:`  Avg: ${hAvg.toFixed(2)}`
+          }
+        }
+      },
+      scales:{
+        y:{
+          position:'right',
+          min:hMin,max:hMax,
+          grid:{color:'rgba(255,255,255,0.04)',drawBorder:false},
+          border:{display:false,dash:[4,4]},
+          ticks:{color:'#475569',font:{weight:'bold',size:9},stepSize:0.5,callback:v=>v%1===0?v.toFixed(0):(v).toFixed(1)}
+        },
+        x:{
+          ticks:{
+            color:h.map(s=>hex(s.score)),
+            font:{weight:'bold',size:10},
+            maxRotation:0
+          },
+          grid:{display:false},
+          border:{display:false}
+        }
+      }
+    }
+  });
 }
 
 function addToCompare(id){
@@ -559,16 +610,47 @@ function renderAcctPanel(){
       <div class="flex items-center gap-4">
         <div class="avatar-upload relative" onclick="document.getElementById('avatarInput').click()" title="Change photo">${avatar}<div class="avatar-overlay rounded-full"><i data-lucide="camera" class="w-4 h-4 text-white"></i></div></div>
         <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="handleAvatar(event)">
-        <div><div class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-0.5">Signed in as</div><div class="text-xl font-black text-white">${accountUser.username}</div><div class="text-xs text-slate-500 mt-0.5">Net worth: <span class="text-emerald-400 font-bold">${nw.toFixed(0)} CP</span> · Last synced: ${ls} <span class="ml-1 text-[10px] text-indigo-400 font-bold">· Auto-syncs hourly</span></div></div>
+        <div><div class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-0.5">Signed in as</div><div class="text-xl font-black text-white">${accountUser.username}</div><div class="text-xs text-slate-500 mt-0.5">Net worth: <span class="text-emerald-400 font-bold">${nw.toFixed(0)} CP</span> · Last synced: ${ls} <span class="ml-1 text-[10px] text-indigo-400 font-bold">· Auto-syncs hourly</span>${accountUser.email?`<span class='ml-1 text-[10px] text-slate-500'>· ${accountUser.email}</span>`:' · <button onclick="addEmail()" class="ml-1 text-[10px] text-indigo-400 hover:text-indigo-300 font-bold underline">Add email</button>'}</div></div>
       </div>
       <div class="flex gap-2">
         <button onclick="publishLb()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-black uppercase tracking-wider rounded-xl transition flex items-center gap-2"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync</button>
         <button onclick="signOut()" class="px-4 py-2 bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-slate-400 text-xs font-black uppercase tracking-wider rounded-xl transition">Sign Out</button>
       </div></div>`;
   }else{
-    panel.innerHTML=`<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"><div><div class="text-sm font-bold text-white mb-1">Create a free account</div><div class="text-xs text-slate-400">Appear on the global leaderboard. Score syncs automatically.</div></div><div class="flex gap-2 w-full sm:w-auto"><input type="text" id="usernameInput" placeholder="Pick a username..." maxlength="20" class="bg-slate-800 border border-slate-700 focus:border-indigo-500 outline-none text-white text-sm px-3 py-2 rounded-xl w-full sm:w-48 transition"><button onclick="createAcct()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-wider rounded-xl transition whitespace-nowrap flex items-center gap-2"><i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Join</button></div></div>`;
+    panel.innerHTML=`<div class="space-y-4">
+      <div class="grid grid-cols-2 gap-2 p-1 bg-slate-800/60 rounded-xl" id="authTabs">
+        <button onclick="showAuthTab('register')" id="tabRegister" class="py-1.5 text-xs font-black uppercase tracking-wider rounded-lg bg-indigo-600 text-white transition">New Account</button>
+        <button onclick="showAuthTab('login')" id="tabLogin" class="py-1.5 text-xs font-black uppercase tracking-wider rounded-lg text-slate-400 hover:text-white transition">Login with Email</button>
+      </div>
+      <div id="authRegister">
+        <div class="text-sm font-bold text-white mb-1">Create a free account</div>
+        <div class="text-xs text-slate-400 mb-3">Appear on the global leaderboard. Add an email to log in on other devices.</div>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input type="text" id="usernameInput" placeholder="Username..." maxlength="20" class="bg-slate-800 border border-slate-700 focus:border-indigo-500 outline-none text-white text-sm px-3 py-2 rounded-xl flex-1 transition">
+          <input type="email" id="emailInput" placeholder="Email (optional)..." class="bg-slate-800 border border-slate-700 focus:border-indigo-500 outline-none text-white text-sm px-3 py-2 rounded-xl flex-1 transition">
+          <button onclick="createAcct()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black uppercase tracking-wider rounded-xl transition whitespace-nowrap flex items-center gap-2"><i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Join</button>
+        </div>
+      </div>
+      <div id="authLogin" class="hidden">
+        <div class="text-sm font-bold text-white mb-1">Login with Email</div>
+        <div class="text-xs text-slate-400 mb-3">Enter the email you registered with on another device.</div>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input type="email" id="loginEmailInput" placeholder="Your email..." class="bg-slate-800 border border-slate-700 focus:border-indigo-500 outline-none text-white text-sm px-3 py-2 rounded-xl flex-1 transition">
+          <button onclick="loginWithEmail()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-wider rounded-xl transition whitespace-nowrap flex items-center gap-2"><i data-lucide="log-in" class="w-3.5 h-3.5"></i> Login</button>
+        </div>
+      </div>
+    </div>`;
   }
   lucide.createIcons();
+}
+function addEmail(){
+  const email=prompt('Enter your email address to enable cross-device login:');
+  if(!email)return;
+  if(!/^[^@]+@[^@]+\.[^@]+$/.test(email.trim()))return toast('Invalid email','error');
+  accountUser.email=email.trim().toLowerCase();
+  saveAcct(accountUser);
+  localStorage.setItem('cr4_email_'+accountUser.email,JSON.stringify(accountUser));
+  renderAcctPanel();toast('Email saved! You can now log in from other devices.','success');
 }
 function handleAvatar(e){
   const file=e.target.files[0];if(!file)return;
@@ -577,12 +659,34 @@ function handleAvatar(e){
 }
 async function createAcct(){
   const input=document.getElementById('usernameInput'),username=input?.value.trim();
+  const emailInput=document.getElementById('emailInput'),email=(emailInput?.value.trim()||'').toLowerCase();
   if(!username||username.length<2)return toast('Username too short','error');
   if(!/^[a-zA-Z0-9_ \-.]+$/.test(username))return toast('Only letters, numbers, spaces, _ - .','error');
+  if(email&&!/^[^@]+@[^@]+\.[^@]+$/.test(email))return toast('Invalid email address','error');
   const userId=`user_${username.toLowerCase().replace(/\s/g,'_')}_${Math.random().toString(36).slice(2,7)}`;
-  saveAcct({userId,username,lastSync:null,avatar:null});
+  const acct={userId,username,email:email||null,lastSync:null,avatar:null};
+  saveAcct(acct);
+  if(email)localStorage.setItem('cr4_email_'+email,JSON.stringify(acct));
   renderAcctPanel();toast(`Welcome, ${username}! 🎉`,'gold');
   await publishLb();startAutoSyncFn();
+}
+async function loginWithEmail(){
+  const emailInput=document.getElementById('loginEmailInput'),email=(emailInput?.value.trim()||'').toLowerCase();
+  if(!email)return toast('Enter your email','error');
+  const stored=localStorage.getItem('cr4_email_'+email);
+  if(stored){
+    const acct=JSON.parse(stored);saveAcct(acct);
+    renderAcctPanel();toast(`Welcome back, ${acct.username}!`,'gold');
+    startAutoSyncFn();loadGlobalLb();
+  }else{
+    toast('No account found for that email on this device. Try the device you first registered on.','error');
+  }
+}
+function showAuthTab(tab){
+  document.getElementById('authRegister').classList.toggle('hidden',tab!=='register');
+  document.getElementById('authLogin').classList.toggle('hidden',tab!=='login');
+  document.getElementById('tabRegister').className=`py-1.5 text-xs font-black uppercase tracking-wider rounded-lg transition ${tab==='register'?'bg-indigo-600 text-white':'text-slate-400 hover:text-white'}`;
+  document.getElementById('tabLogin').className=`py-1.5 text-xs font-black uppercase tracking-wider rounded-lg transition ${tab==='login'?'bg-indigo-600 text-white':'text-slate-400 hover:text-white'}`;
 }
 function signOut(){accountUser=null;localStorage.removeItem(ACCT_KEY);renderAcctPanel();toast('Signed out','neutral');}
 function startAutoSyncFn(){if(autoSync)clearInterval(autoSync);autoSync=setInterval(silentPublish,AUTO_SYNC_MS);}
@@ -591,7 +695,7 @@ async function silentPublish(){
   const nw=parseFloat(document.getElementById('netWorth').innerText)||0;
   const roster=wallet.roster.map(id=>{const f=farmers.find(x=>x.id===id);return f?f.name:id;});
   const captain=wallet.captain?(farmers.find(x=>x.id===wallet.captain)?.name||null):null;
-  try{await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({userId:accountUser.userId,username:accountUser.username,netWorth:nw,roster,captain})});accountUser.lastSync=Date.now();localStorage.setItem(ACCT_KEY,JSON.stringify(accountUser));}catch{}
+  try{await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({userId:accountUser.userId,username:accountUser.username,netWorth:nw,roster,captain,avatar:accountUser.avatar||null})});accountUser.lastSync=Date.now();localStorage.setItem(ACCT_KEY,JSON.stringify(accountUser));}catch{}
 }
 async function publishLb(){
   if(!accountUser)return toast('Create an account first','error');
@@ -599,7 +703,7 @@ async function publishLb(){
   const roster=wallet.roster.map(id=>{const f=farmers.find(x=>x.id===id);return f?f.name:id;});
   const captain=wallet.captain?(farmers.find(x=>x.id===wallet.captain)?.name||null):null;
   try{
-    const res=await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({userId:accountUser.userId,username:accountUser.username,netWorth:nw,roster,captain})});
+    const res=await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({userId:accountUser.userId,username:accountUser.username,netWorth:nw,roster,captain,avatar:accountUser.avatar||null})});
     const json=await res.json();if(!json.ok)throw new Error(json.error);
     accountUser.lastSync=Date.now();localStorage.setItem(ACCT_KEY,JSON.stringify(accountUser));
     toast('Leaderboard updated! 🏆','success');renderAcctPanel();loadGlobalLb();
@@ -618,9 +722,10 @@ async function loadGlobalLb(){
       const isMe=accountUser&&e.username===accountUser.username;
       const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
       const rowCls=i===0?'lb-gold':i===1?'lb-silver':i===2?'lb-bronze':'';
-      const roster=e.roster?.length?e.roster.map(n=>{const isCap=e.captain&&e.captain===n;return`<span class="px-2 py-0.5 bg-slate-800 text-slate-300 rounded-md text-[10px] font-bold border border-slate-700">${n}${isCap?'<span class="captain-badge ml-0.5">(C)</span>':''}</span>`;}).join(''):'<span class="text-slate-600 text-[10px]">No roster</span>';
+      const roster=e.roster?.length?e.roster.map(n=>{const isCap=e.captain&&e.captain===n;return`<span class="px-2 py-0.5 rounded-md text-[10px] font-bold border ${isCap?'bg-red-500/15 border-red-500/40 text-red-300':'bg-slate-800 border-slate-700 text-slate-300'}">${isCap?'⚔️ ':''}${n}${isCap?'<span class="captain-badge ml-0.5">(C)</span>':''}</span>`;}).join(''):'<span class="text-slate-600 text-[10px]">No roster</span>';
       const delBtn=isAdmin?`<button onclick="deleteUser('${e.userId}','${e.username.replace(/'/g,"\\'")}') " class="ml-2 p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition" title="Remove"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`:'';
-      return`<div class="lb-row p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${rowCls} ${isMe?'bg-indigo-600/10':''}"><div class="w-10 text-center font-black text-lg ${i===0?'text-amber-400':i===1?'text-slate-300':i===2?'text-amber-600':'text-slate-600'}">${medal}</div><div class="flex-1 min-w-0"><div class="font-black text-white flex items-center gap-2 flex-wrap">${e.username}${isMe?'<span class="text-[9px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-black uppercase tracking-wider">You</span>':''}${delBtn}</div><div class="flex flex-wrap gap-1 mt-1">${roster}</div></div><div class="text-right shrink-0"><div class="text-lg font-black text-emerald-400">${e.netWorth.toFixed(0)}</div><div class="text-[10px] text-slate-500 font-bold uppercase">CP Net Worth</div></div></div>`;
+      const av=e.avatar?`<img src="${e.avatar}" class="w-9 h-9 rounded-full object-cover shrink-0 border-2 border-slate-700"/>`:`<div class="w-9 h-9 rounded-full bg-indigo-700 flex items-center justify-center text-sm font-black text-white shrink-0">${e.username[0].toUpperCase()}</div>`;
+      return`<div class="lb-row p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${rowCls} ${isMe?'bg-indigo-600/10':''}"><div class="w-10 text-center font-black text-lg ${i===0?'text-amber-400':i===1?'text-slate-300':i===2?'text-amber-600':'text-slate-600'}">${medal}</div>${av}<div class="flex-1 min-w-0"><div class="font-black text-white flex items-center gap-2 flex-wrap">${e.username}${isMe?'<span class="text-[9px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-black uppercase tracking-wider">You</span>':''}${delBtn}</div><div class="flex flex-wrap gap-1 mt-1">${roster}</div></div><div class="text-right shrink-0"><div class="text-lg font-black text-emerald-400">${e.netWorth.toFixed(0)}</div><div class="text-[10px] text-slate-500 font-bold uppercase">CP Net Worth</div></div></div>`;
     }).join('');
     lucide.createIcons();
   }catch{list.innerHTML='<div class="p-8 text-center text-slate-500 font-bold text-sm">Failed to load leaderboard.</div>';}
