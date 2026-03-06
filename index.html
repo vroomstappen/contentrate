@@ -96,6 +96,16 @@
                     <div class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center text-red-400 shrink-0"><i data-lucide="trending-down" class="w-5 h-5"></i></div>
                 </div>
             </div>
+            <div class="border-t border-slate-800/60 mt-5 pt-5 grid grid-cols-2 gap-4">
+                <div class="flex items-center gap-3 p-3 rounded-2xl bg-indigo-500/5 border border-indigo-500/20">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0"><i data-lucide="arrow-up-right" class="w-4 h-4"></i></div>
+                    <div><div class="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-0.5">Best 14D Rise</div><div id="cqRiseName" class="text-sm font-black text-white">—</div><div id="cqRiseDiff" class="text-xs text-slate-400 font-bold"></div></div>
+                </div>
+                <div class="flex items-center gap-3 p-3 rounded-2xl bg-orange-500/5 border border-orange-500/20 justify-end text-right">
+                    <div><div class="text-[10px] font-black uppercase tracking-widest text-orange-400 mb-0.5">Worst 14D Drop</div><div id="cqDropName" class="text-sm font-black text-white">—</div><div id="cqDropDiff" class="text-xs text-slate-400 font-bold"></div></div>
+                    <div class="w-8 h-8 rounded-xl bg-orange-500/20 flex items-center justify-center text-orange-400 shrink-0"><i data-lucide="arrow-down-right" class="w-4 h-4"></i></div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -121,6 +131,10 @@
     <div class="max-w-4xl w-full mx-auto p-4 md:p-8 flex flex-col h-full overflow-y-auto">
         <div class="flex justify-between items-center mb-8"><h2 class="text-2xl font-black text-white flex items-center gap-3"><i data-lucide="trophy" class="w-6 h-6 text-amber-400"></i> Global Manager Leaderboard</h2><div class="flex items-center gap-2"><button onclick="toggleAdminMode()" id="adminToggleBtn" class="p-2 rounded-lg text-slate-700 hover:text-slate-400 transition" title="Admin"><i data-lucide="shield" class="w-4 h-4"></i></button><button onclick="closeAccountModal()" class="p-2 hover:bg-slate-800 rounded-full transition text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button></div></div>
         <div id="accountPanel" class="glass-card p-6 rounded-2xl mb-6"></div>
+        <div class="glass-card rounded-2xl overflow-hidden mb-6">
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between"><span class="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-2"><i data-lucide="swords" class="w-3.5 h-3.5"></i> Battles</span><button onclick="loadBattles()" class="text-[10px] text-slate-500 hover:text-slate-300 font-bold transition">Refresh</button></div>
+            <div id="battleInbox" class="p-4 max-h-48 overflow-y-auto custom-scroll"><p class="text-slate-600 text-xs text-center py-3">No battles yet</p></div>
+        </div>
         <div class="glass-card rounded-2xl overflow-hidden">
             <div class="p-5 border-b border-slate-800 flex items-center justify-between"><span class="text-xs font-black uppercase tracking-widest text-slate-400">All Managers</span><span id="lbLastUpdated" class="text-[10px] text-slate-600"></span></div>
             <div id="globalLbList" class="divide-y divide-slate-800/60 max-h-[50vh] overflow-y-auto custom-scroll"><div class="p-8 text-center text-slate-500 font-bold text-sm">Loading...</div></div>
@@ -136,10 +150,62 @@
 <div id="toast" class="fixed bottom-10 right-10 bg-slate-900 border border-slate-700 text-white px-6 py-4 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-bold flex items-center gap-3"><span id="toastMsg"></span></div>
 <script>
 const SHEET_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vSMTqwP3ViGcOKh0lYRGL9rdAL-Q84U85iZSLTqwdT3OGXKhMvIsI-pNC_cbRjcod0teMJ7YbRXREhy/pub?gid=607342177&single=true&output=csv';
-const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbwOwdo7_6IjQG4AZFbAaFkU6C8miEffFKHC63IkbjE6RZm2vGM7uvTx_TBmFCgihPlBxg/exec';
+const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbwvAwNOxddLNde-xH9NvHtYUqjPb55wZvO3oB6f9o04xUoi-ZhqR4aHbVnU4XydxE-7AQ/exec';
 const MAX_ROSTER=4,AUTO_SYNC_MS=3600000,SAVE_KEY='cr4_wallet_v1',ACCT_KEY='cr4_account_v1',TUT_KEY='cr4_tut_done';
 let farmers=[],compareSelection=[],dailyBest={},cdTimer=null,autoSync=null,accountUser=null,isAdmin=false;
 let wallet={balance:100,roster:[],captain:null,lastMatchDate:null};
+
+// ── RANK SYSTEM ───────────────────────────────────────────────
+const RANKS=[
+  {name:'Noob',       stars:0,  color:'text-slate-400', bg:'bg-slate-500/10 border-slate-500/30', emoji:'👾'},
+  {name:'Novice',     stars:1,  color:'text-green-400',  bg:'bg-green-500/10 border-green-500/30',  emoji:'🥉'},
+  {name:'Intermediate',stars:3, color:'text-blue-400',   bg:'bg-blue-500/10 border-blue-500/30',    emoji:'🥈'},
+  {name:'Professional',stars:5, color:'text-purple-400', bg:'bg-purple-500/10 border-purple-500/30',emoji:'🏅'},
+  {name:'Elite',      stars:10, color:'text-amber-400',  bg:'bg-amber-500/10 border-amber-500/30',  emoji:'👑'},
+];
+const SHIELD_COST=50;
+
+function getRank(stars){
+  let rank=RANKS[0];
+  for(const r of RANKS){if(stars>=r.stars)rank=r;}
+  return rank;
+}
+function rankBadgeHtml(rankName,small=false){
+  const r=RANKS.find(x=>x.name===rankName)||RANKS[0];
+  const sz=small?'text-[9px] px-1.5 py-0.5':'text-[10px] px-2 py-0.5';
+  return`<span class="${sz} rounded-full border font-black ${r.bg} ${r.color}">${r.emoji} ${r.name}</span>`;
+}
+// Get stars/shields from wallet (private, never synced to server)
+function getStars(){return wallet.battleStars||0;}
+function getShields(){return wallet.shields||0;}
+function addStar(){
+  wallet.battleStars=(wallet.battleStars||0)+1;
+  const rank=getRank(wallet.battleStars);
+  toast(`⭐ Battle star earned! You now have ${wallet.battleStars} star${wallet.battleStars!==1?'s':''}. Rank: ${rank.emoji} ${rank.name}`,'gold');
+  updateHUD();
+}
+function loseStar(){
+  const cur=wallet.battleStars||0;
+  if(cur<=0)return toast('\uD83D\uDC80 Battle lost but no stars to lose.','error');
+  const shields=wallet.shields||0;
+  if(shields>0){
+    wallet.shields=shields-1;
+    toast('\uD83D\uDEE1\uFE0F Star Shield activated! Your star was protected. Shields remaining: '+wallet.shields,'neutral');
+    updateHUD();return;
+  }
+  wallet.battleStars=cur-1;
+  const rank=getRank(wallet.battleStars);
+  toast('\uD83D\uDC80 Lost a battle star. Stars: '+wallet.battleStars+' — Rank: '+rank.emoji+' '+rank.name,'error');
+  updateHUD();
+}
+function buyShield(){
+  if(wallet.balance<SHIELD_COST)return toast('Need '+SHIELD_COST+' CP to buy a Star Shield','error');
+  if(!confirm('Buy a Star Shield for '+SHIELD_COST+' CP?\n\nA shield protects one star from being lost in a battle defeat. Shields are single-use.'))return;
+  wallet.balance-=SHIELD_COST;
+  wallet.shields=(wallet.shields||0)+1;
+  toast('\uD83D\uDEE1\uFE0F Star Shield purchased! Shields: '+wallet.shields,'gold');
+  updateHUD();renderAcctPanel();
+}
 
 function hex(s){return s<6?'#ef4444':s<6.5?'#f97316':s<7?'#eab308':s<8?'#22c55e':s<9?'#3b82f6':'#a855f7'}
 function tw(s){return s<6?'text-red-500':s<6.5?'text-orange-500':s<7?'text-yellow-500':s<8?'text-green-500':s<9?'text-blue-500':'text-purple-500'}
@@ -192,7 +258,7 @@ function processData(rows){
   farmers.sort((a,b)=>b.currentAvg-a.currentAvg);
   const pRanked=[...farmers].sort((a,b)=>b.prevAvg-a.prevAvg);
   farmers.forEach((f,i)=>{f.rankChange=pRanked.findIndex(x=>x.id===f.id)-i;});
-  farmers.forEach(f=>{f.price=Math.floor(Math.max(10,(f.currentAvg-6)*40)*(f.isKing?1.2:1));});
+  farmers.forEach(f=>{const tm=f.grade.label==='S-Tier'?1.2:f.grade.label==='A-Tier'?1.1:1;f.price=Math.floor(Math.max(10,(f.currentAvg-6)*40)*(f.isKing?1.2:1)*tm);});
   updateHUD();startCD();renderCQ();
   document.getElementById('loading-state').classList.add('hidden');
   document.getElementById('view-container').classList.remove('hidden');
@@ -222,6 +288,13 @@ function renderCQ(){
   document.getElementById('wotdScore').textContent=`${worst.scores[0].score.toFixed(1)} — ${worst.scores[0].date}`;
   const pct=Math.max(0,Math.min(100,((avg-5)/5)*100));
   document.getElementById('cqNeedle').style.left=pct+'%';
+  const movers=farmers.map(f=>({name:f.name,diff:parseFloat((f.currentAvg-f.prevAvg).toFixed(2))}));
+  const riser=movers.reduce((a,b)=>b.diff>a.diff?b:a);
+  const dropper=movers.reduce((a,b)=>b.diff<a.diff?b:a);
+  document.getElementById('cqRiseName').textContent=riser.name;
+  document.getElementById('cqRiseDiff').textContent=(riser.diff>0?'+':'')+riser.diff+' vs prev 14d avg';
+  document.getElementById('cqDropName').textContent=dropper.name;
+  document.getElementById('cqDropDiff').textContent=(dropper.diff>0?'+':'')+dropper.diff+' vs prev 14d avg';
 }
 
 function updateHUD(){
@@ -287,22 +360,46 @@ function toggleCaptain(id){
 }
 
 function collectRewards(){
+  if(window._matchLock)return;
   const latest=farmers[0]?.scores[0]?.date;
+  if(!latest)return;
   if(wallet.lastMatchDate===latest)return toast('Already played this round.','error');
   if(!wallet.roster.length)return toast('Recruit players first!','neutral');
+  // Anti-cheat: only count farmers that exist in live loaded data
+  const validRoster=wallet.roster.filter(id=>farmers.find(x=>x.id===id));
+  if(!validRoster.length)return toast('No valid farmers in roster','error');
+  // Anti-cheat: prevent double-submit with processing lock
+  window._matchLock=true;
+  const btn=document.getElementById('collectBtn');if(btn)btn.disabled=true;
   let total=0;
-  wallet.roster.forEach(id=>{
-    const f=farmers.find(x=>x.id===id);if(!f||!f.scores.length)return;
-    const score=f.scores[0].score,isCap=wallet.captain===id;
+  validRoster.forEach(id=>{
+    const f=farmers.find(x=>x.id===id);
+    // Anti-cheat: clamp score to valid range, must come from live data object
+    const score=Math.max(0,Math.min(10,f.scores[0].score));
+    const isCap=wallet.captain===id;
     let cp=0;
     if(score>=9)cp=40;else if(score>=8)cp=20;else if(score>=7)cp=(score-7)*15;else if(score<6.5)cp=-15;
     if(isCap)cp*=2;
     total+=cp;
   });
+  // Anti-cheat: cap total round to sane ceiling
+  total=Math.max(-160,Math.min(320,total));
+  // Anti-cheat: match fingerprint prevents localStorage replay attacks
+  const sig=`${latest}|${[...validRoster].sort().join(',')}|${wallet.captain||''}`;
+  if(!wallet.matchLog)wallet.matchLog=[];
+  if(wallet.matchLog.includes(sig)){
+    window._matchLock=false;if(btn)btn.disabled=false;
+    return toast('Already played this round.','error');
+  }
+  wallet.matchLog.push(sig);
+  if(wallet.matchLog.length>60)wallet.matchLog=wallet.matchLog.slice(-60);
   wallet.balance+=total;if(wallet.balance<0)wallet.balance=0;
-  wallet.lastMatchDate=latest;updateHUD();startCD();
+  wallet.lastMatchDate=latest;
+  updateHUD();startCD();
+  window._matchLock=false;if(btn)btn.disabled=false;
   const emoji=total>=50?'\uD83D\uDE80':total>=0?'\uD83E\uDD11':'\uD83D\uDCC9';
   toast(`${emoji} Matchday: ${total>=0?'+':''}${total.toFixed(1)} CP`,total>=0?'gold':'error');
+  submitBattleResults(total);
   silentPublish();
 }
 
@@ -598,24 +695,50 @@ function closeTutorial(){document.getElementById('tutorialOverlay').classList.ad
 
 function loadAcct(){const sv=localStorage.getItem(ACCT_KEY)||localStorage.getItem('cr_account');if(sv){accountUser=JSON.parse(sv);startAutoSyncFn();}}
 function saveAcct(u){accountUser=u;localStorage.setItem(ACCT_KEY,JSON.stringify(u));}
-function openAccountModal(){document.getElementById('accountModal').classList.remove('hidden');lucide.createIcons();renderAcctPanel();loadGlobalLb();}
+function openAccountModal(){document.getElementById('accountModal').classList.remove('hidden');lucide.createIcons();renderAcctPanel();loadGlobalLb();loadBattles();}
 function closeAccountModal(){document.getElementById('accountModal').classList.add('hidden');}
 function renderAcctPanel(){
   const panel=document.getElementById('accountPanel');
   if(accountUser){
     const nw=parseFloat(document.getElementById('netWorth').innerText)||0;
     const ls=accountUser.lastSync?new Date(accountUser.lastSync).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'Never';
+    const stars=getStars(),shields=getShields(),rank=getRank(stars);
+    const nextRank=RANKS.find(r=>r.stars>stars);
+    const starsHtml='⭐'.repeat(Math.min(stars,10))+(stars>10?` ×${stars}`:'');
     const avatar=accountUser.avatar?`<img src="${accountUser.avatar}" class="w-12 h-12 rounded-full object-cover" style="box-shadow:0 0 0 3px #6366f1,0 0 0 5px rgba(99,102,241,0.2)"/>`:`<div class="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-lg font-black" style="box-shadow:0 0 0 3px #6366f1">${accountUser.username[0].toUpperCase()}</div>`;
-    panel.innerHTML=`<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div class="flex items-center gap-4">
-        <div class="avatar-upload relative" onclick="document.getElementById('avatarInput').click()" title="Change photo">${avatar}<div class="avatar-overlay rounded-full"><i data-lucide="camera" class="w-4 h-4 text-white"></i></div></div>
-        <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="handleAvatar(event)">
-        <div><div class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-0.5">Signed in as</div><div class="text-xl font-black text-white">${accountUser.username}</div><div class="text-xs text-slate-500 mt-0.5">Net worth: <span class="text-emerald-400 font-bold">${nw.toFixed(0)} CP</span> · Last synced: ${ls} <span class="ml-1 text-[10px] text-indigo-400 font-bold">· Auto-syncs hourly</span>${accountUser.email?`<span class='ml-1 text-[10px] text-slate-500'>· ${accountUser.email}</span>`:' · <button onclick="addEmail()" class="ml-1 text-[10px] text-indigo-400 hover:text-indigo-300 font-bold underline">Add email</button>'}</div></div>
+    panel.innerHTML=`<div class="space-y-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="avatar-upload relative" onclick="document.getElementById('avatarInput').click()" title="Change photo">${avatar}<div class="avatar-overlay rounded-full"><i data-lucide="camera" class="w-4 h-4 text-white"></i></div></div>
+          <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="handleAvatar(event)">
+          <div><div class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-0.5">Signed in as</div>
+            <div class="flex items-center gap-2 flex-wrap"><div class="text-xl font-black text-white">${accountUser.username}</div>${rankBadgeHtml(rank.name)}</div>
+            <div class="text-xs text-slate-500 mt-0.5">Net worth: <span class="text-emerald-400 font-bold">${nw.toFixed(0)} CP</span> · Last synced: ${ls} <span class="ml-1 text-[10px] text-indigo-400 font-bold">· Auto-syncs hourly</span>${accountUser.email?`<span class='ml-1 text-[10px] text-slate-500'>· ${accountUser.email}</span>`:' · <button onclick="addEmail()" class="ml-1 text-[10px] text-indigo-400 hover:text-indigo-300 font-bold underline">Add email</button>'}</div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="publishLb()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-black uppercase tracking-wider rounded-xl transition flex items-center gap-2"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync</button>
+          <button onclick="signOut()" class="px-4 py-2 bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-slate-400 text-xs font-black uppercase tracking-wider rounded-xl transition">Sign Out</button>
+        </div>
       </div>
-      <div class="flex gap-2">
-        <button onclick="publishLb()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-black uppercase tracking-wider rounded-xl transition flex items-center gap-2"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sync</button>
-        <button onclick="signOut()" class="px-4 py-2 bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-slate-400 text-xs font-black uppercase tracking-wider rounded-xl transition">Sign Out</button>
-      </div></div>`;
+      <div class="grid grid-cols-3 gap-3 pt-1">
+        <div class="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-3 text-center">
+          <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Battle Stars</div>
+          <div class="text-lg font-black text-amber-400">${stars === 0 ? '—' : starsHtml}</div>
+          <div class="text-[10px] text-slate-500 mt-0.5">${stars} star${stars!==1?'s':''} total</div>
+        </div>
+        <div class="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-3 text-center">
+          <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Rank Progress</div>
+          <div class="text-sm font-black ${rank.color}">${rank.emoji} ${rank.name}</div>
+          <div class="text-[10px] text-slate-500 mt-0.5">${nextRank?'Next: '+nextRank.name+' ('+nextRank.stars+' ⭐)':'Max rank!'}</div>
+        </div>
+        <div class="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-3 text-center">
+          <div class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">🛡️ Shields</div>
+          <div class="text-lg font-black text-cyan-400">${shields}</div>
+          <button onclick="buyShield()" class="mt-1 text-[9px] font-black uppercase tracking-wider text-cyan-400 hover:text-cyan-300 border border-cyan-500/30 hover:border-cyan-400/50 px-2 py-0.5 rounded-lg transition">Buy (${SHIELD_COST} CP)</button>
+        </div>
+      </div>
+    </div>`;
   }else{
     panel.innerHTML=`<div class="space-y-4">
       <div class="grid grid-cols-2 gap-2 p-1 bg-slate-800/60 rounded-xl" id="authTabs">
@@ -695,15 +818,17 @@ async function silentPublish(){
   const nw=parseFloat(document.getElementById('netWorth').innerText)||0;
   const roster=wallet.roster.map(id=>{const f=farmers.find(x=>x.id===id);return f?f.name:id;});
   const captain=wallet.captain?(farmers.find(x=>x.id===wallet.captain)?.name||null):null;
-  try{await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({userId:accountUser.userId,username:accountUser.username,netWorth:nw,roster,captain,avatar:accountUser.avatar||null})});accountUser.lastSync=Date.now();localStorage.setItem(ACCT_KEY,JSON.stringify(accountUser));}catch{}
+  const rank=getRank(getStars()).name;
+  try{await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({userId:accountUser.userId,username:accountUser.username,netWorth:nw,roster,captain,avatar:accountUser.avatar||null,rank})});accountUser.lastSync=Date.now();localStorage.setItem(ACCT_KEY,JSON.stringify(accountUser));}catch{}
 }
 async function publishLb(){
   if(!accountUser)return toast('Create an account first','error');
   const nw=parseFloat(document.getElementById('netWorth').innerText)||0;
   const roster=wallet.roster.map(id=>{const f=farmers.find(x=>x.id===id);return f?f.name:id;});
   const captain=wallet.captain?(farmers.find(x=>x.id===wallet.captain)?.name||null):null;
+  const rank=getRank(getStars()).name;
   try{
-    const res=await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({userId:accountUser.userId,username:accountUser.username,netWorth:nw,roster,captain,avatar:accountUser.avatar||null})});
+    const res=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({userId:accountUser.userId,username:accountUser.username,netWorth:nw,roster,captain,avatar:accountUser.avatar||null,rank})});
     const json=await res.json();if(!json.ok)throw new Error(json.error);
     accountUser.lastSync=Date.now();localStorage.setItem(ACCT_KEY,JSON.stringify(accountUser));
     toast('Leaderboard updated! 🏆','success');renderAcctPanel();loadGlobalLb();
@@ -724,8 +849,10 @@ async function loadGlobalLb(){
       const rowCls=i===0?'lb-gold':i===1?'lb-silver':i===2?'lb-bronze':'';
       const roster=e.roster?.length?e.roster.map(n=>{const isCap=e.captain&&e.captain===n;return`<span class="px-2 py-0.5 rounded-md text-[10px] font-bold border ${isCap?'bg-red-500/15 border-red-500/40 text-red-300':'bg-slate-800 border-slate-700 text-slate-300'}">${isCap?'⚔️ ':''}${n}${isCap?'<span class="captain-badge ml-0.5">(C)</span>':''}</span>`;}).join(''):'<span class="text-slate-600 text-[10px]">No roster</span>';
       const delBtn=isAdmin?`<button onclick="deleteUser('${(e.userId||'').replace(/'/g,"\\'")}','${e.username.replace(/'/g,"\\'")}');" class="ml-2 p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition" title="Remove"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>`:'';
+      const challengeBtn=(!isMe&&accountUser&&e.userId)?`<button onclick="sendChallenge('${e.userId.replace(/'/g,"\\'")}','${e.username.replace(/'/g,"\\'")}');" class="ml-1 p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition" title="Challenge to battle"><i data-lucide="swords" class="w-3.5 h-3.5"></i></button>`:'';
+      const rankBadge=e.rank?rankBadgeHtml(e.rank,true):rankBadgeHtml('Noob',true);
       const av=e.avatar?`<img src="${e.avatar}" class="w-9 h-9 rounded-full object-cover shrink-0 border-2 border-slate-700"/>`:`<div class="w-9 h-9 rounded-full bg-indigo-700 flex items-center justify-center text-sm font-black text-white shrink-0">${e.username[0].toUpperCase()}</div>`;
-      return`<div class="lb-row p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${rowCls} ${isMe?'bg-indigo-600/10':''}"><div class="w-10 text-center font-black text-lg ${i===0?'text-amber-400':i===1?'text-slate-300':i===2?'text-amber-600':'text-slate-600'}">${medal}</div>${av}<div class="flex-1 min-w-0"><div class="font-black text-white flex items-center gap-2 flex-wrap">${e.username}${isMe?'<span class="text-[9px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-black uppercase tracking-wider">You</span>':''}${delBtn}</div><div class="flex flex-wrap gap-1 mt-1">${roster}</div></div><div class="text-right shrink-0"><div class="text-lg font-black text-emerald-400">${e.netWorth.toFixed(0)}</div><div class="text-[10px] text-slate-500 font-bold uppercase">CP Net Worth</div></div></div>`;
+      return`<div class="lb-row p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${rowCls} ${isMe?'bg-indigo-600/10':''}"><div class="w-10 text-center font-black text-lg ${i===0?'text-amber-400':i===1?'text-slate-300':i===2?'text-amber-600':'text-slate-600'}">${medal}</div>${av}<div class="flex-1 min-w-0"><div class="font-black text-white flex items-center gap-2 flex-wrap">${e.username}${rankBadge}${isMe?'<span class="text-[9px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-black uppercase tracking-wider">You</span>':''}${delBtn}${challengeBtn}</div><div class="flex flex-wrap gap-1 mt-1">${roster}</div></div><div class="text-right shrink-0"><div class="text-lg font-black text-emerald-400">${e.netWorth.toFixed(0)}</div><div class="text-[10px] text-slate-500 font-bold uppercase">CP Net Worth</div></div></div>`;
     }).join('');
     lucide.createIcons();
   }catch{list.innerHTML='<div class="p-8 text-center text-slate-500 font-bold text-sm">Failed to load leaderboard.</div>';}
@@ -768,7 +895,138 @@ async function deleteUser(userId,username){
   }
 }
 
+// ── BATTLE SYSTEM (server-backed) ─────────────────────────────
+// Metric: CP gained in the most recent match (not total NW)
+// Prize:  winner gets 20% of loser's match gain added to their balance
+
+async function apiPost(payload){
+  const res=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload),redirect:'follow'});
+  return res.json();
+}
+
+async function sendChallenge(targetId,targetName){
+  if(!accountUser)return toast('Create an account first','error');
+  if(targetId===accountUser.userId)return toast("You can't challenge yourself",'error');
+  toast('Sending challenge...','neutral');
+  try{
+    const r=await apiPost({action:'sendChallenge',challengerId:accountUser.userId,challengerName:accountUser.username,targetId,targetName});
+    if(!r.ok)return toast(r.error==='Active battle already exists'?'Already have an active battle with '+targetName:'Challenge failed: '+r.error,'error');
+    toast('\u2694\uFE0F Challenge sent to '+targetName+'! They need to accept.','gold');
+    loadBattles();
+  }catch{toast('Could not send challenge — check connection','error');}
+}
+
+async function acceptChallenge(battleId){
+  try{
+    const r=await apiPost({action:'acceptChallenge',battleId,targetId:accountUser.userId});
+    if(!r.ok)return toast('Accept failed: '+r.error,'error');
+    toast('\uD83E\uDD4A Battle accepted! Beat your opponent in your next match.','gold');
+    loadBattles();
+  }catch{toast('Could not accept — check connection','error');}
+}
+
+async function declineChallenge(battleId){
+  try{
+    const r=await apiPost({action:'declineChallenge',battleId,targetId:accountUser.userId});
+    if(!r.ok)return toast('Decline failed: '+r.error,'error');
+    toast('Challenge declined','neutral');loadBattles();
+  }catch{toast('Could not decline — check connection','error');}
+}
+
+// Called from collectRewards — submits this round's CP gain to any active battles
+async function submitBattleResults(matchGain){
+  if(!accountUser)return;
+  try{
+    const r=await fetch(APPS_SCRIPT_URL+'?userId='+encodeURIComponent(accountUser.userId));
+    const json=await r.json();
+    const myBattles=(json.battles||[]).filter(b=>b.status==='active');
+    for(const b of myBattles){
+      const res=await apiPost({action:'submitResult',battleId:b.id,userId:accountUser.userId,matchGain});
+      if(res.ok){
+        // Re-fetch to check if both players have now submitted
+        const updated=await fetch(APPS_SCRIPT_URL+'?userId='+encodeURIComponent(accountUser.userId));
+        const uj=await updated.json();
+        const done=(uj.battles||[]).find(x=>x.id===b.id&&x.status==='done');
+        if(done){
+          const isChal=done.challenger===accountUser.userId;
+          const myGain=isChal?done.challengerGain:done.targetGain;
+          const oppGain=isChal?done.targetGain:done.challengerGain;
+          const oppName=isChal?done.targetName:done.challengerName;
+          if(myGain>oppGain){
+            const prize=Math.floor(oppGain*0.20);
+            wallet.balance+=prize;updateHUD();
+            addStar();
+            toast('\uD83C\uDFC6 Battle won vs '+oppName+'! +'+prize+' CP (20% of their +'+oppGain+' match gain)','gold');
+          }else if(myGain<oppGain){
+            const loss=Math.floor(myGain*0.20);
+            loseStar();
+            toast('\uD83D\uDC80 Battle lost vs '+oppName+'. They earn '+loss+' CP (20% of your +'+myGain+' match gain).','error');
+          }else{
+            toast('\uD83E\uDD1D Draw vs '+oppName+'! No CP exchanged.','neutral');
+          }
+        }
+      }
+    }
+  }catch(err){console.warn('Battle submit error:',err);}
+}
+
+async function loadBattles(){
+  if(!accountUser)return renderBattleInbox([]);
+  try{
+    const r=await fetch(APPS_SCRIPT_URL+'?userId='+encodeURIComponent(accountUser.userId));
+    const json=await r.json();
+    renderBattleInbox(json.battles||[]);
+  }catch{renderBattleInbox([]);}
+}
+
+function renderBattleInbox(battles){
+  const el=document.getElementById('battleInbox');if(!el)return;
+  if(!accountUser){el.innerHTML='<p class="text-slate-600 text-xs text-center py-3">Sign in to use battles</p>';return;}
+  if(!battles.length){el.innerHTML='<p class="text-slate-600 text-xs text-center py-3">No battles yet — challenge someone from the leaderboard below!</p>';return;}
+  const incoming=battles.filter(b=>b.status==='pending'&&b.target===accountUser.userId);
+  const sent=battles.filter(b=>b.status==='pending'&&b.challenger===accountUser.userId);
+  const active=battles.filter(b=>b.status==='active');
+  const done=[...battles.filter(b=>b.status==='done')].sort((a,b)=>b.resolvedAt-a.resolvedAt).slice(0,3);
+  el.innerHTML=[
+    ...incoming.map(b=>`<div class="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl mb-2">
+      <span class="text-base">\u2694\uFE0F</span>
+      <div class="flex-1 min-w-0"><p class="text-xs font-black text-white">${b.challengerName} challenged you!</p><p class="text-[10px] text-slate-400">Winner gets 20% of loser's match CP gain</p></div>
+      <button onclick="acceptChallenge('${b.id}')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black rounded-lg transition">Accept</button>
+      <button onclick="declineChallenge('${b.id}')" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-[10px] font-black rounded-lg transition">Decline</button>
+    </div>`),
+    ...sent.map(b=>`<div class="flex items-center gap-2 p-3 bg-slate-800/60 border border-slate-700 rounded-xl mb-2">
+      <span class="text-base">\u23F3</span>
+      <div class="flex-1"><p class="text-xs font-black text-slate-300">Waiting for ${b.targetName} to accept</p><p class="text-[10px] text-slate-500">Challenge pending</p></div>
+    </div>`),
+    ...active.map(b=>{
+      const isChal=b.challenger===accountUser.userId;
+      const opp=isChal?b.targetName:b.challengerName;
+      const mySubmitted=isChal?b.challengerGain!==null:b.targetGain!==null;
+      return`<div class="flex items-center gap-2 p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-xl mb-2">
+        <span class="text-base">\uD83E\uDD4A</span>
+        <div class="flex-1"><p class="text-xs font-black text-white">vs ${opp}</p>
+        <p class="text-[10px] text-slate-400">${mySubmitted?'Your score locked in — waiting for opponent':'Run your next match to lock in your score'}</p></div>
+        <span class="text-[10px] font-black ${mySubmitted?'text-emerald-400':'text-indigo-400'} uppercase tracking-wider px-2 py-1 bg-indigo-500/10 rounded-lg">${mySubmitted?'Locked':'Active'}</span>
+      </div>`;
+    }),
+    ...done.map(b=>{
+      const isChal=b.challenger===accountUser.userId;
+      const myGain=isChal?b.challengerGain:b.targetGain;
+      const oppGain=isChal?b.targetGain:b.challengerGain;
+      const opp=isChal?b.targetName:b.challengerName;
+      const won=myGain>oppGain;
+      const prize=Math.floor((won?oppGain:myGain)*0.20);
+      return`<div class="flex items-center gap-2 p-3 bg-slate-800/40 border border-slate-700/40 rounded-xl mb-2 opacity-70">
+        <span class="text-base">${won?'\uD83C\uDFC6':'\uD83D\uDC80'}</span>
+        <div class="flex-1"><p class="text-xs font-black ${won?'text-emerald-400':'text-red-400'}">${won?'Won':'Lost'} vs ${opp}</p>
+        <p class="text-[10px] text-slate-500">You +${myGain} CP vs their +${oppGain} CP &middot; ${won?'+':''}${won?prize:-prize} CP prize &middot; ${new Date(b.resolvedAt).toLocaleDateString()}</p></div>
+      </div>`;
+    })
+  ].join('');
+}
+
 window.onload=init;
+
 </script>
 </body>
 </html>
