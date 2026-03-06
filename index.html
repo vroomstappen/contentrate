@@ -33,8 +33,12 @@
         .tutorial-dot.active{background:#6366f1;width:20px;border-radius:4px}
         .tutorial-step{display:none}
         .tutorial-step.active{display:block}
-        #accountModal{position:fixed;inset:0;background:rgba(2,6,23,.97);backdrop-filter:blur(16px);z-index:80;display:flex;flex-direction:row}
+        #accountModal{position:fixed;inset:0;background:rgba(2,6,23,.97);backdrop-filter:blur(16px);z-index:80;display:flex;flex-direction:column}
         #accountModal.hidden{display:none!important}
+        #hubSheet{width:100%}
+        @media(min-width:768px){#hubSheet{width:22rem;position:absolute;top:0;right:0;bottom:0;transform:none!important;border-radius:0;max-height:none;border-top:none;border-left:1px solid rgba(51,65,85,0.8)}}
+        #hubBackdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:15}
+        #hubBackdrop.open{display:block}
         .lb-row{transition:all .2s}
         .lb-row:hover{background:rgba(99,102,241,.08)}
         .lb-gold{border-left:3px solid #f59e0b}
@@ -129,59 +133,75 @@
     </div>
 </div>
 <div id="accountModal" class="hidden flex flex-col">
-    <!-- Mobile tab switcher (hidden on md+) -->
-    <div class="md:hidden flex border-b border-slate-800 bg-slate-950 shrink-0">
-        <button id="tabBtnHub" onclick="switchModalTab('hub')" class="flex-1 py-3 text-xs font-black uppercase tracking-widest text-white border-b-2 border-indigo-500 transition">⚔️ Hub</button>
-        <button id="tabBtnLb" onclick="switchModalTab('lb')" class="flex-1 py-3 text-xs font-black uppercase tracking-widest text-slate-500 border-b-2 border-transparent transition">🏆 Leaderboard</button>
+    <!-- Backdrop for hub sheet on mobile -->
+    <div id="hubBackdrop" onclick="closeHub()"></div>
+
+    <!-- CLOSE button top-right -->
+    <button onclick="closeAccountModal()" class="absolute top-4 right-4 z-30 p-2 hover:bg-slate-800 rounded-full transition text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+
+    <!-- LEADERBOARD — fills the whole screen -->
+    <div class="flex flex-col h-full w-full overflow-hidden">
+        <div class="px-5 pt-5 pb-3 flex items-center justify-between shrink-0">
+            <div>
+                <h2 class="text-xl font-black text-white flex items-center gap-2"><i data-lucide="trophy" class="w-5 h-5 text-amber-400"></i> Global Leaderboard</h2>
+                <span id="lbLastUpdated" class="text-[10px] text-slate-500 font-bold mt-0.5 block"></span>
+            </div>
+            <div class="flex items-center gap-2 pr-10">
+                <button onclick="toggleAdminMode()" id="adminToggleBtn" class="p-2 rounded-lg text-slate-700 hover:text-slate-400 transition" title="Admin"><i data-lucide="shield" class="w-4 h-4"></i></button>
+                <button onclick="loadGlobalLb()" class="p-2 rounded-lg text-slate-600 hover:text-slate-300 transition"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+            </div>
+        </div>
+        <div id="globalLbList" class="flex-1 overflow-y-auto custom-scroll divide-y divide-slate-800/40">
+            <div class="p-8 text-center text-slate-500 font-bold text-sm">Loading...</div>
+        </div>
     </div>
 
-    <!-- Two-panel layout: left sidebar + right leaderboard -->
-    <div class="flex flex-1 overflow-hidden min-h-0">
-
-        <!-- LEFT PANEL: Account + Battles (always visible md+, tab-controlled on mobile) -->
-        <div id="modalPanelHub" class="w-full md:w-80 lg:w-96 flex-shrink-0 flex flex-col border-r border-slate-800/80 overflow-y-auto custom-scroll">
-            <!-- Header -->
-            <div class="p-5 border-b border-slate-800/80 flex items-center justify-between sticky top-0 bg-slate-950/90 backdrop-blur-md z-10">
-                <h2 class="text-base font-black text-white flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i> Manager Hub</h2>
-                <div class="flex items-center gap-1">
-                    <button onclick="toggleAdminMode()" id="adminToggleBtn" class="p-2 rounded-lg text-slate-700 hover:text-slate-400 transition" title="Admin"><i data-lucide="shield" class="w-4 h-4"></i></button>
-                    <button onclick="closeAccountModal()" class="p-2 hover:bg-slate-800 rounded-full transition text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-                </div>
-            </div>
-
-            <!-- Account panel -->
+    <!-- HUB SHEET — slides up from bottom on mobile, fixed sidebar on desktop -->
+    <div id="hubSheet" class="
+        fixed bottom-0 left-0 right-0 z-20
+        md:absolute md:top-0 md:left-auto md:right-0 md:bottom-0 md:w-88
+        flex flex-col
+        bg-slate-950 border-t border-slate-800 md:border-t-0 md:border-l md:border-slate-800
+        transition-transform duration-300
+        translate-y-full md:translate-y-0
+        max-h-[85vh] md:max-h-none md:h-full
+        rounded-t-3xl md:rounded-none
+    ">
+        <!-- Sheet drag handle (mobile only) -->
+        <div class="md:hidden flex justify-center pt-3 pb-1 shrink-0">
+            <div class="w-10 h-1 rounded-full bg-slate-700"></div>
+        </div>
+        <!-- Sheet header -->
+        <div class="px-5 py-4 flex items-center justify-between border-b border-slate-800/60 shrink-0">
+            <h3 class="text-sm font-black text-white flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-indigo-400"></i> Manager Hub</h3>
+            <button onclick="closeHub()" class="text-[10px] font-black text-slate-500 hover:text-slate-300 uppercase tracking-wider transition md:hidden">Close</button>
+        </div>
+        <!-- Sheet content — scrollable -->
+        <div class="flex-1 overflow-y-auto custom-scroll">
             <div id="accountPanel" class="p-4 border-b border-slate-800/60"></div>
-
-            <!-- Battles panel -->
-            <div class="flex-1 flex flex-col min-h-0">
-                <div class="px-4 py-3 flex items-center justify-between border-b border-slate-800/60">
-                    <span class="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-2"><i data-lucide="swords" class="w-3.5 h-3.5"></i> Battles</span>
-                    <button onclick="loadBattles()" class="text-[10px] text-slate-500 hover:text-slate-300 font-bold transition flex items-center gap-1"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button>
-                </div>
-                <div id="battleInbox" class="p-4 overflow-y-auto custom-scroll flex-1"><p class="text-slate-600 text-xs text-center py-3">No battles yet</p></div>
+            <div class="px-4 py-3 flex items-center justify-between border-b border-slate-800/60">
+                <span class="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-2"><i data-lucide="swords" class="w-3.5 h-3.5"></i> Battles</span>
+                <button onclick="loadBattles()" class="text-[10px] text-slate-500 hover:text-slate-300 font-bold flex items-center gap-1"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button>
             </div>
+            <div id="battleInbox" class="p-4"><p class="text-slate-600 text-xs text-center py-3">No battles yet</p></div>
         </div>
-
-        <!-- RIGHT PANEL: Leaderboard (always visible md+, tab-controlled on mobile) -->
-        <div id="modalPanelLb" class="hidden md:flex flex-col flex-1 min-w-0 overflow-hidden">
-            <!-- Leaderboard header -->
-            <div class="p-5 border-b border-slate-800/80 flex items-center justify-between sticky top-0 bg-slate-950/90 backdrop-blur-md z-10">
-                <div class="flex items-center gap-3">
-                    <span class="text-base font-black uppercase tracking-widest text-white">All Managers</span>
-                    <span id="lbLastUpdated" class="text-[10px] text-slate-500 font-bold"></span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="closeAccountModal()" class="md:hidden p-2 hover:bg-slate-800 rounded-full transition text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-                    <button onclick="loadGlobalLb()" class="text-[10px] text-slate-500 hover:text-slate-300 font-bold transition flex items-center gap-1"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button>
-                </div>
-            </div>
-            <!-- Leaderboard list -->
-            <div id="globalLbList" class="flex-1 overflow-y-auto custom-scroll divide-y divide-slate-800/40">
-                <div class="p-8 text-center text-slate-500 font-bold text-sm">Loading...</div>
-            </div>
-        </div>
-
     </div>
+
+    <!-- BOTTOM NAV (mobile only) -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 z-10 flex border-t border-slate-800 bg-slate-950/95 backdrop-blur-md" id="modalBottomNav">
+        <button onclick="loadGlobalLb()" class="flex-1 py-3 flex flex-col items-center gap-1 text-slate-400 hover:text-white transition">
+            <i data-lucide="trophy" class="w-5 h-5"></i>
+            <span class="text-[9px] font-black uppercase tracking-wider">Rankings</span>
+        </button>
+        <button onclick="openHub()" class="flex-1 py-3 flex flex-col items-center gap-1 text-slate-400 hover:text-white transition">
+            <i data-lucide="user" class="w-5 h-5"></i>
+            <span class="text-[9px] font-black uppercase tracking-wider">My Hub</span>
+        </button>
+    </div>
+
+    <!-- Extra bottom padding so last LB row isn't hidden behind mobile nav -->
+    <div class="md:hidden h-16 shrink-0"></div>
+
 </div>
 <div id="compareModal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 hidden flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-6xl rounded-3xl overflow-y-auto max-h-[95vh] shadow-2xl custom-scroll relative">
@@ -192,7 +212,7 @@
 <div id="toast" class="fixed bottom-10 right-10 bg-slate-900 border border-slate-700 text-white px-6 py-4 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-bold flex items-center gap-3"><span id="toastMsg"></span></div>
 <script>
 const SHEET_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vSMTqwP3ViGcOKh0lYRGL9rdAL-Q84U85iZSLTqwdT3OGXKhMvIsI-pNC_cbRjcod0teMJ7YbRXREhy/pub?gid=607342177&single=true&output=csv';
-const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycby1N-4rNwKeSie4QMGD7MT4Ynh2rO3mMJKYz4qzU1fjTCb0BK8pIhz_thMjU2lmJVcdQg/exec';
+const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbzxn5zEaB6v4La8G8I6pXI4nX-Xi63YRB2lwcZRznPsCHxUBWW5_mvmImvct7C6Idpo4w/exec';
 const MAX_ROSTER=4,AUTO_SYNC_MS=3600000,SAVE_KEY='cr4_wallet_v1',ACCT_KEY='cr4_account_v1',TUT_KEY='cr4_tut_done';
 let farmers=[],compareSelection=[],dailyBest={},cdTimer=null,autoSync=null,accountUser=null,isAdmin=false;
 let wallet={balance:100,roster:[],captain:null,lastMatchDate:null};
@@ -737,24 +757,23 @@ function closeTutorial(){document.getElementById('tutorialOverlay').classList.ad
 
 function loadAcct(){const sv=localStorage.getItem(ACCT_KEY)||localStorage.getItem('cr_account');if(sv){accountUser=JSON.parse(sv);startAutoSyncFn();}}
 function saveAcct(u){accountUser=u;localStorage.setItem(ACCT_KEY,JSON.stringify(u));}
-function openAccountModal(){document.getElementById('accountModal').classList.remove('hidden');lucide.createIcons();renderAcctPanel();loadGlobalLb();loadBattles();switchModalTab('hub');}
+function openAccountModal(){
+  document.getElementById('accountModal').classList.remove('hidden');
+  lucide.createIcons();renderAcctPanel();loadGlobalLb();loadBattles();
+}
 function closeAccountModal(){document.getElementById('accountModal').classList.add('hidden');}
-function switchModalTab(tab){
-  const hub=document.getElementById('modalPanelHub');
-  const lb=document.getElementById('modalPanelLb');
-  const btnHub=document.getElementById('tabBtnHub');
-  const btnLb=document.getElementById('tabBtnLb');
-  if(!hub||!lb)return;
-  // On md+ both panels always show — only toggle on mobile
-  const isMobile=window.innerWidth<768;
-  if(isMobile){
-    hub.classList.toggle('hidden',tab!=='hub');
-    lb.classList.toggle('hidden',tab!=='lb');
-    // lb needs flex when shown
-    if(tab==='lb')lb.classList.add('flex');else lb.classList.remove('flex');
-  }
-  if(btnHub)btnHub.className=`flex-1 py-3 text-xs font-black uppercase tracking-widest transition border-b-2 ${tab==='hub'?'text-white border-indigo-500':'text-slate-500 border-transparent'}`;
-  if(btnLb)btnLb.className=`flex-1 py-3 text-xs font-black uppercase tracking-widest transition border-b-2 ${tab==='lb'?'text-white border-indigo-500':'text-slate-500 border-transparent'}`;
+function openHub(){
+  const s=document.getElementById('hubSheet');
+  const bd=document.getElementById('hubBackdrop');
+  s.classList.remove('translate-y-full');s.classList.add('translate-y-0');
+  if(bd)bd.classList.add('open');
+  renderAcctPanel();loadBattles();lucide.createIcons();
+}
+function closeHub(){
+  const s=document.getElementById('hubSheet');
+  const bd=document.getElementById('hubBackdrop');
+  s.classList.add('translate-y-full');s.classList.remove('translate-y-0');
+  if(bd)bd.classList.remove('open');
 }
 function renderAcctPanel(){
   const panel=document.getElementById('accountPanel');
@@ -872,26 +891,11 @@ function showAuthTab(tab){
 }
 function signOut(){accountUser=null;localStorage.removeItem(ACCT_KEY);renderAcctPanel();toast('Signed out','neutral');}
 function startAutoSyncFn(){if(autoSync)clearInterval(autoSync);autoSync=setInterval(silentPublish,AUTO_SYNC_MS);}
-async function silentPublish(){
-  if(!accountUser||!APPS_SCRIPT_URL)return;
-  const nw=parseFloat(document.getElementById('netWorth').innerText)||0;
-  const roster=wallet.roster.map(id=>{const f=farmers.find(x=>x.id===id);return f?f.name:id;});
-  const captain=wallet.captain?(farmers.find(x=>x.id===wallet.captain)?.name||null):null;
-  const rank=getRank(getStars()).name;
-  try{await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({userId:accountUser.userId,username:accountUser.username,netWorth:nw,roster,captain,avatar:accountUser.avatar||null,rank})});accountUser.lastSync=Date.now();localStorage.setItem(ACCT_KEY,JSON.stringify(accountUser));}catch{}
-}
+async function silentPublish(){return silentPublishWithBattles();}
 async function publishLb(){
   if(!accountUser)return toast('Create an account first','error');
-  const nw=parseFloat(document.getElementById('netWorth').innerText)||0;
-  const roster=wallet.roster.map(id=>{const f=farmers.find(x=>x.id===id);return f?f.name:id;});
-  const captain=wallet.captain?(farmers.find(x=>x.id===wallet.captain)?.name||null):null;
-  const rank=getRank(getStars()).name;
-  try{
-    const res=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({userId:accountUser.userId,username:accountUser.username,netWorth:nw,roster,captain,avatar:accountUser.avatar||null,rank})});
-    const json=await res.json();if(!json.ok)throw new Error(json.error);
-    accountUser.lastSync=Date.now();localStorage.setItem(ACCT_KEY,JSON.stringify(accountUser));
-    toast('Leaderboard updated! 🏆','success');renderAcctPanel();loadGlobalLb();
-  }catch{toast('Could not publish. Check connection.','error');}
+  await silentPublishWithBattles();
+  toast('Leaderboard updated! 🏆','success');renderAcctPanel();loadGlobalLb();
 }
 async function loadGlobalLb(){
   const list=document.getElementById('globalLbList');
@@ -900,6 +904,7 @@ async function loadGlobalLb(){
     const res=await fetch(APPS_SCRIPT_URL),json=await res.json();
     if(!json.ok)throw new Error();
     const entries=(json.entries||[]).sort((a,b)=>b.netWorth-a.netWorth);
+    syncBattlesFromLb(entries);
     document.getElementById('lbLastUpdated').innerText=`${entries.length} manager${entries.length!==1?'s':''} registered`;
     if(!entries.length){list.innerHTML='<div class="p-8 text-center text-slate-500 font-bold text-sm">No managers yet. Be first!</div>';return;}
     list.innerHTML=entries.map((e,i)=>{
@@ -911,25 +916,21 @@ async function loadGlobalLb(){
       const challengeBtn=(!isMe&&accountUser&&e.userId)?`<button onclick="sendChallenge('${e.userId.replace(/'/g,"\\'")}','${e.username.replace(/'/g,"\\'")}');" class="ml-1 px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/25 text-amber-400 transition text-[10px] font-black" title="Challenge to battle">⚔️ Challenge</button>`:'';
       const rankBadge=e.rank?rankBadgeHtml(e.rank,true):rankBadgeHtml('Noob',true);
       const av=e.avatar?`<img src="${e.avatar}" class="w-9 h-9 rounded-full object-cover shrink-0 border-2 border-slate-700"/>`:`<div class="w-9 h-9 rounded-full bg-indigo-700 flex items-center justify-center text-sm font-black text-white shrink-0">${e.username[0].toUpperCase()}</div>`;
-      return`<div class="lb-row px-5 py-3.5 flex items-center gap-4 ${rowCls} ${isMe?'bg-indigo-600/8 border-l-2 border-indigo-500':''}">
-        <!-- Rank number -->
-        <div class="w-8 text-center font-black text-base ${i===0?'text-amber-400':i===1?'text-slate-300':i===2?'text-amber-600':'text-slate-600'} shrink-0">${medal}</div>
-        <!-- Avatar -->
+      return`<div class="lb-row px-4 py-3 flex items-center gap-3 ${rowCls} ${isMe?'bg-indigo-600/10 border-l-2 border-indigo-500':''}">
+        <div class="w-7 text-center font-black text-sm ${i===0?'text-amber-400':i===1?'text-slate-300':i===2?'text-amber-600':'text-slate-600'} shrink-0">${medal}</div>
         ${av}
-        <!-- Name + rank badge + roster -->
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 flex-wrap mb-1">
-            <span class="font-black text-white text-sm">${e.username}</span>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="font-black text-white text-sm truncate">${e.username}</span>
             ${rankBadge}
-            ${isMe?'<span class="text-[9px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-black uppercase tracking-wider">You</span>':''}
+            ${isMe?'<span class="text-[9px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-black">You</span>':''}
             ${delBtn}${challengeBtn}
           </div>
-          <div class="flex flex-wrap gap-1">${roster}</div>
+          ${e.roster?.length?`<div class="flex flex-wrap gap-1 mt-1">${roster}</div>`:''}
         </div>
-        <!-- Net worth -->
-        <div class="text-right shrink-0">
-          <div class="text-base font-black text-emerald-400">${e.netWorth.toFixed(0)}</div>
-          <div class="text-[9px] text-slate-600 font-bold uppercase tracking-wider">CP</div>
+        <div class="text-right shrink-0 ml-2">
+          <div class="text-sm font-black text-emerald-400">${e.netWorth.toFixed(0)}</div>
+          <div class="text-[9px] text-slate-600 font-bold uppercase">CP</div>
         </div>
       </div>`;
     }).join('');
@@ -974,149 +975,194 @@ async function deleteUser(userId,username){
   }
 }
 
-// ── BATTLE SYSTEM (server-backed) ─────────────────────────────
-// Metric: CP gained in the most recent match (not total NW)
-// Prize:  winner gets 20% of loser's match gain added to their balance
+// ── BATTLE SYSTEM (leaderboard-piggybacked) ───────────────────
+// Battles are stored in localStorage. Challenges are delivered by
+// embedding them in the challenger's leaderboard row so the target
+// can read them on next LB fetch. No extra Apps Script actions needed.
 
-async function apiPost(payload){
-  // Apps Script redirects POST→GET on 302, losing the body.
-  // Use no-redirect and re-POST to the final URL instead.
+const BATTLE_KEY='cr4_battles_v2';
+function getBattles(){try{return JSON.parse(localStorage.getItem(BATTLE_KEY)||'[]');}catch{return[];}}
+function saveBattles(b){localStorage.setItem(BATTLE_KEY,JSON.stringify(b));}
+
+// Publish with embedded outbound challenges so targets can read them
+async function silentPublishWithBattles(){
+  if(!accountUser||!APPS_SCRIPT_URL)return;
+  const nw=parseFloat(document.getElementById('netWorth').innerText)||0;
+  const roster=wallet.roster.map(id=>{const f=farmers.find(x=>x.id===id);return f?f.name:id;});
+  const captain=wallet.captain?(farmers.find(x=>x.id===wallet.captain)?.name||null):null;
+  const rank=getRank(getStars()).name;
+  // Embed any pending outbound challenges + active battle match gains so opponent can read them
+  const battles=getBattles();
+  const outbound=battles.filter(b=>b.challenger===accountUser.userId&&b.status==='pending')
+    .map(b=>({id:b.id,challengerRank:b.challengerRank,targetId:b.target}));
+  const activeGains=battles.filter(b=>(b.challenger===accountUser.userId||b.target===accountUser.userId)&&b.status==='active'&&b.myGainSubmitted)
+    .map(b=>({id:b.id,gain:b.myGain}));
   try{
-    const r=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
-    const text=await r.text();
-    return JSON.parse(text);
-  }catch(e){
-    // If redirect happened, the response won't be JSON — return a safe error
-    return{ok:false,error:'Network error: '+e.message};
+    await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({userId:accountUser.userId,username:accountUser.username,netWorth:nw,roster,captain,avatar:accountUser.avatar||null,rank,
+        battleOut:JSON.stringify(outbound),battleGains:JSON.stringify(activeGains)})});
+    accountUser.lastSync=Date.now();localStorage.setItem(ACCT_KEY,JSON.stringify(accountUser));
+  }catch{}
+}
+
+function sendChallenge(targetId,targetName){
+  if(!accountUser)return toast('Create an account first','error');
+  if(targetId===accountUser.userId)return toast("You can't challenge yourself",'error');
+  const battles=getBattles();
+  const existing=battles.find(b=>
+    ((b.challenger===accountUser.userId&&b.target===targetId)||(b.challenger===targetId&&b.target===accountUser.userId))
+    &&b.status!=='done');
+  if(existing)return toast('Already have an active battle with '+targetName,'neutral');
+  const b={id:'b_'+Date.now(),challenger:accountUser.userId,challengerName:accountUser.username,
+    target:targetId,targetName,challengerRank:getRank(getStars()).name,
+    status:'pending',myGain:null,myGainSubmitted:false,oppGain:null,createdAt:Date.now()};
+  battles.push(b);saveBattles(battles);
+  silentPublishWithBattles(); // broadcast the challenge via LB row
+  toast('\u2694\uFE0F Challenge sent to '+targetName+'! Waiting for them to accept.','gold');
+  renderBattleInbox();
+}
+
+function acceptChallenge(battleId){
+  const battles=getBattles();
+  const b=battles.find(x=>x.id===battleId);if(!b)return;
+  b.status='active';saveBattles(battles);
+  toast('\uD83E\uDD4A Battle accepted! Beat '+b.challengerName+' next match.','gold');
+  renderBattleInbox();
+}
+
+function declineChallenge(battleId){
+  const battles=getBattles();
+  const idx=battles.findIndex(x=>x.id===battleId);
+  if(idx>=0)battles.splice(idx,1);saveBattles(battles);
+  toast('Challenge declined','neutral');renderBattleInbox();
+}
+
+// Called after loadGlobalLb — scans LB rows for challenges addressed to me
+function syncBattlesFromLb(entries){
+  if(!accountUser)return;
+  const battles=getBattles();
+  let changed=false;
+  entries.forEach(e=>{
+    if(!e.battleOut)return;
+    let outbound;
+    try{outbound=JSON.parse(e.battleOut);}catch{return;}
+    outbound.forEach(ch=>{
+      if(ch.targetId!==accountUser.userId)return;
+      // This entry has challenged me — create local battle if not already known
+      const known=battles.find(b=>b.id===ch.id);
+      if(!known){
+        battles.push({id:ch.id,challenger:e.userId,challengerName:e.username,
+          target:accountUser.userId,targetName:accountUser.username,
+          challengerRank:ch.challengerRank||'Noob',
+          status:'pending',myGain:null,myGainSubmitted:false,oppGain:null,createdAt:Date.now()});
+        changed=true;
+        toast('\u2694\uFE0F '+e.username+' has challenged you to a battle!','gold');
+      }
+    });
+    // Also pick up opponent's match gain for active battles
+    if(!e.battleGains)return;
+    let gains;try{gains=JSON.parse(e.battleGains);}catch{return;}
+    gains.forEach(g=>{
+      const b=battles.find(x=>x.id===g.id&&x.status==='active');
+      if(!b)return;
+      const iAmChallenger=b.challenger===accountUser.userId;
+      // e is the opponent — store their gain
+      if(iAmChallenger&&b.oppGain===null){b.oppGain=g.gain;changed=true;}
+      if(!iAmChallenger&&b.oppGain===null){b.oppGain=g.gain;changed=true;}
+      // If both gains recorded, resolve
+      if(b.myGainSubmitted&&b.oppGain!==null){
+        resolveBattle(b);changed=true;
+      }
+    });
+  });
+  if(changed){saveBattles(battles);renderBattleInbox();}
+}
+
+function resolveBattle(b){
+  const rankPrize={'Noob':10,'Novice':20,'Intermediate':30,'Professional':40,'Elite':50};
+  const prize=rankPrize[b.challengerRank]||10;
+  const myGain=b.myGain||0,oppGain=b.oppGain||0;
+  const oppName=b.challenger===accountUser.userId?b.targetName:b.challengerName;
+  b.status='done';b.resolvedAt=Date.now();
+  if(myGain>oppGain){
+    wallet.balance+=prize;updateHUD();addStar();
+    toast('\uD83C\uDFC6 Battle won vs '+oppName+'! +'+prize+' CP ('+b.challengerRank+' stakes)','gold');
+  }else if(myGain<oppGain){
+    loseStar();
+    toast('\uD83D\uDC80 Battle lost vs '+oppName+'. They earn +'+prize+' CP. ('+b.challengerRank+' stakes)','error');
+  }else{
+    toast('\uD83E\uDD1D Draw vs '+oppName+'! No CP exchanged.','neutral');
   }
 }
 
-async function sendChallenge(targetId,targetName){
-  if(!accountUser)return toast('Create an account first','error');
-  if(targetId===accountUser.userId)return toast("You can't challenge yourself",'error');
-  toast('Sending challenge...','neutral');
-  const challengerRank=getRank(getStars()).name;
-  try{
-    const r=await apiPost({action:'sendChallenge',challengerId:accountUser.userId,challengerName:accountUser.username,targetId,targetName,challengerRank});
-    if(!r.ok)return toast(r.error==='Active battle already exists'?'Already have an active battle with '+targetName:'Challenge failed: '+r.error,'error');
-    toast('\u2694\uFE0F Challenge sent to '+targetName+'! They need to accept.','gold');
-    loadBattles();
-  }catch{toast('Could not send challenge — check connection','error');}
-}
-
-async function acceptChallenge(battleId){
-  try{
-    const r=await apiPost({action:'acceptChallenge',battleId,targetId:accountUser.userId});
-    if(!r.ok)return toast('Accept failed: '+r.error,'error');
-    toast('\uD83E\uDD4A Battle accepted! Beat your opponent in your next match.','gold');
-    loadBattles();
-  }catch{toast('Could not accept — check connection','error');}
-}
-
-async function declineChallenge(battleId){
-  try{
-    const r=await apiPost({action:'declineChallenge',battleId,targetId:accountUser.userId});
-    if(!r.ok)return toast('Decline failed: '+r.error,'error');
-    toast('Challenge declined','neutral');loadBattles();
-  }catch{toast('Could not decline — check connection','error');}
-}
-
-// Called from collectRewards — submits this round's CP gain to any active battles
-async function submitBattleResults(matchGain){
+// Called from collectRewards — records match gain for active battles
+function submitBattleResults(matchGain){
   if(!accountUser)return;
-  try{
-    const r=await fetch(APPS_SCRIPT_URL+'?userId='+encodeURIComponent(accountUser.userId));
-    const json=await r.json();
-    const myBattles=(json.battles||[]).filter(b=>b.status==='active');
-    for(const b of myBattles){
-      const res=await apiPost({action:'submitResult',battleId:b.id,userId:accountUser.userId,matchGain});
-      if(res.ok){
-        // Re-fetch to check if both players have now submitted
-        const updated=await fetch(APPS_SCRIPT_URL+'?userId='+encodeURIComponent(accountUser.userId));
-        const uj=await updated.json();
-        const done=(uj.battles||[]).find(x=>x.id===b.id&&x.status==='done');
-        if(done){
-          const isChal=done.challenger===accountUser.userId;
-          const myGain=isChal?done.challengerGain:done.targetGain;
-          const oppGain=isChal?done.targetGain:done.challengerGain;
-          const oppName=isChal?done.targetName:done.challengerName;
-          // Prize based on the lower rank in the match (challenger's rank stored on battle)
-          const battleRank=done.challengerRank||'Noob';
-          const rankPrize={'Noob':10,'Novice':20,'Intermediate':30,'Professional':40,'Elite':50};
-          const prize=rankPrize[battleRank]||10;
-          if(myGain>oppGain){
-            wallet.balance+=prize;updateHUD();
-            addStar();
-            toast('\uD83C\uDFC6 Battle won vs '+oppName+'! +'+prize+' CP ('+battleRank+' stakes)','gold');
-          }else if(myGain<oppGain){
-            loseStar();
-            toast('\uD83D\uDC80 Battle lost vs '+oppName+'. They earn +'+prize+' CP. ('+battleRank+' stakes)','error');
-          }else{
-            toast('\uD83E\uDD1D Draw vs '+oppName+'! No CP exchanged.','neutral');
-          }
-        }
-      }
-    }
-  }catch(err){console.warn('Battle submit error:',err);}
+  const battles=getBattles();
+  let changed=false;
+  battles.forEach(b=>{
+    if(b.status!=='active')return;
+    if(b.challenger!==accountUser.userId&&b.target!==accountUser.userId)return;
+    if(b.myGainSubmitted)return;
+    b.myGain=matchGain;b.myGainSubmitted=true;changed=true;
+    // If we already have opponent's gain, resolve immediately
+    if(b.oppGain!==null){resolveBattle(b);}
+  });
+  if(changed){saveBattles(battles);silentPublishWithBattles();renderBattleInbox();}
 }
 
 async function loadBattles(){
-  if(!accountUser)return renderBattleInbox([]);
-  try{
-    const r=await fetch(APPS_SCRIPT_URL+'?userId='+encodeURIComponent(accountUser.userId));
-    const json=await r.json();
-    renderBattleInbox(json.battles||[]);
-  }catch{renderBattleInbox([]);}
+  renderBattleInbox();
 }
 
-function renderBattleInbox(battles){
+function renderBattleInbox(){
   const el=document.getElementById('battleInbox');if(!el)return;
   if(!accountUser){el.innerHTML='<p class="text-slate-600 text-xs text-center py-3">Sign in to use battles</p>';return;}
-  if(!battles.length){el.innerHTML='<p class="text-slate-600 text-xs text-center py-3">No battles yet — challenge someone from the leaderboard below!</p>';return;}
-  const incoming=battles.filter(b=>b.status==='pending'&&b.target===accountUser.userId);
-  const sent=battles.filter(b=>b.status==='pending'&&b.challenger===accountUser.userId);
-  const active=battles.filter(b=>b.status==='active');
-  const done=[...battles.filter(b=>b.status==='done')].sort((a,b)=>b.resolvedAt-a.resolvedAt).slice(0,3);
+  const battles=getBattles();
+  const mine=battles.filter(b=>b.challenger===accountUser.userId||b.target===accountUser.userId);
+  const incoming=mine.filter(b=>b.status==='pending'&&b.target===accountUser.userId);
+  const sent=mine.filter(b=>b.status==='pending'&&b.challenger===accountUser.userId);
+  const active=mine.filter(b=>b.status==='active');
+  const done=[...mine.filter(b=>b.status==='done')].sort((a,b)=>b.resolvedAt-a.resolvedAt).slice(0,3);
+  if(!mine.length){el.innerHTML='<p class="text-slate-600 text-xs text-center py-3">No battles yet — challenge someone from the leaderboard!</p>';return;}
+  const rankPrize={'Noob':10,'Novice':20,'Intermediate':30,'Professional':40,'Elite':50};
   el.innerHTML=[
     ...incoming.map(b=>`<div class="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl mb-2">
       <span class="text-base">\u2694\uFE0F</span>
-      <div class="flex-1 min-w-0"><p class="text-xs font-black text-white">${b.challengerName} challenged you!</p><p class="text-[10px] text-slate-400">Stakes: <span class="text-amber-300 font-bold">${{'Noob':10,'Novice':20,'Intermediate':30,'Professional':40,'Elite':50}[b.challengerRank||'Noob']} CP</span> · ${b.challengerRank||'Noob'} tier</p></div>
+      <div class="flex-1 min-w-0"><p class="text-xs font-black text-white">${b.challengerName} challenged you!</p>
+      <p class="text-[10px] text-slate-400">Stakes: <span class="text-amber-300 font-bold">${rankPrize[b.challengerRank]||10} CP</span> · ${b.challengerRank} tier</p></div>
       <button onclick="acceptChallenge('${b.id}')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black rounded-lg transition">Accept</button>
       <button onclick="declineChallenge('${b.id}')" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-[10px] font-black rounded-lg transition">Decline</button>
     </div>`),
     ...sent.map(b=>`<div class="flex items-center gap-2 p-3 bg-slate-800/60 border border-slate-700 rounded-xl mb-2">
       <span class="text-base">\u23F3</span>
-      <div class="flex-1"><p class="text-xs font-black text-slate-300">Waiting for ${b.targetName} to accept</p><p class="text-[10px] text-slate-500">Challenge pending</p></div>
+      <div class="flex-1"><p class="text-xs font-black text-slate-300">Waiting for ${b.targetName} to accept</p>
+      <p class="text-[10px] text-slate-500">Stakes: ${rankPrize[b.challengerRank]||10} CP · ${b.challengerRank}</p></div>
     </div>`),
     ...active.map(b=>{
-      const isChal=b.challenger===accountUser.userId;
-      const opp=isChal?b.targetName:b.challengerName;
-      const mySubmitted=isChal?b.challengerGain!==null:b.targetGain!==null;
+      const opp=b.challenger===accountUser.userId?b.targetName:b.challengerName;
       return`<div class="flex items-center gap-2 p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-xl mb-2">
         <span class="text-base">\uD83E\uDD4A</span>
         <div class="flex-1"><p class="text-xs font-black text-white">vs ${opp}</p>
-        <p class="text-[10px] text-slate-400">${mySubmitted?'Your score locked in — waiting for opponent':'Run your next match to lock in your score'}</p></div>
-        <span class="text-[10px] font-black ${mySubmitted?'text-emerald-400':'text-indigo-400'} uppercase tracking-wider px-2 py-1 bg-indigo-500/10 rounded-lg">${mySubmitted?'Locked':'Active'}</span>
+        <p class="text-[10px] text-slate-400">${b.myGainSubmitted?'Your score locked \u2013 waiting for opponent':'Run your next match to lock in your score'}</p></div>
+        <span class="text-[10px] font-black ${b.myGainSubmitted?'text-emerald-400':'text-indigo-400'} px-2 py-1 bg-slate-800 rounded-lg">${b.myGainSubmitted?'Locked':'Active'}</span>
       </div>`;
     }),
     ...done.map(b=>{
-      const isChal=b.challenger===accountUser.userId;
-      const myGain=isChal?b.challengerGain:b.targetGain;
-      const oppGain=isChal?b.targetGain:b.challengerGain;
-      const opp=isChal?b.targetName:b.challengerName;
-      const won=myGain>oppGain;
-      const rankPrize={'Noob':10,'Novice':20,'Intermediate':30,'Professional':40,'Elite':50};
-      const prize=rankPrize[b.challengerRank||'Noob']||10;
+      const opp=b.challenger===accountUser.userId?b.targetName:b.challengerName;
+      const won=(b.myGain||0)>(b.oppGain||0);
+      const prize=rankPrize[b.challengerRank]||10;
       return`<div class="flex items-center gap-2 p-3 bg-slate-800/40 border border-slate-700/40 rounded-xl mb-2 opacity-70">
         <span class="text-base">${won?'\uD83C\uDFC6':'\uD83D\uDC80'}</span>
         <div class="flex-1"><p class="text-xs font-black ${won?'text-emerald-400':'text-red-400'}">${won?'Won':'Lost'} vs ${opp}</p>
-        <p class="text-[10px] text-slate-500">${won?'+'+prize:'-0'} CP · ${b.challengerRank||'Noob'} · ${new Date(b.resolvedAt).toLocaleDateString()}</p></div>
+        <p class="text-[10px] text-slate-500">${won?'+'+prize:'±0'} CP · ${b.challengerRank} · ${new Date(b.resolvedAt).toLocaleDateString()}</p></div>
       </div>`;
     })
   ].join('');
 }
 
 window.onload=init;
+
 
 </script>
 </body>
