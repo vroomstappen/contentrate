@@ -129,11 +129,17 @@
     </div>
 </div>
 <div id="accountModal" class="hidden flex flex-col">
-    <!-- Two-panel layout: left sidebar + right leaderboard -->
-    <div class="flex h-full w-full overflow-hidden">
+    <!-- Mobile tab switcher (hidden on md+) -->
+    <div class="md:hidden flex border-b border-slate-800 bg-slate-950 shrink-0">
+        <button id="tabBtnHub" onclick="switchModalTab('hub')" class="flex-1 py-3 text-xs font-black uppercase tracking-widest text-white border-b-2 border-indigo-500 transition">⚔️ Hub</button>
+        <button id="tabBtnLb" onclick="switchModalTab('lb')" class="flex-1 py-3 text-xs font-black uppercase tracking-widest text-slate-500 border-b-2 border-transparent transition">🏆 Leaderboard</button>
+    </div>
 
-        <!-- LEFT PANEL: Account + Battles -->
-        <div class="w-full md:w-80 lg:w-96 flex-shrink-0 flex flex-col border-r border-slate-800/80 overflow-y-auto custom-scroll">
+    <!-- Two-panel layout: left sidebar + right leaderboard -->
+    <div class="flex flex-1 overflow-hidden min-h-0">
+
+        <!-- LEFT PANEL: Account + Battles (always visible md+, tab-controlled on mobile) -->
+        <div id="modalPanelHub" class="w-full md:w-80 lg:w-96 flex-shrink-0 flex flex-col border-r border-slate-800/80 overflow-y-auto custom-scroll">
             <!-- Header -->
             <div class="p-5 border-b border-slate-800/80 flex items-center justify-between sticky top-0 bg-slate-950/90 backdrop-blur-md z-10">
                 <h2 class="text-base font-black text-white flex items-center gap-2"><i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i> Manager Hub</h2>
@@ -156,15 +162,18 @@
             </div>
         </div>
 
-        <!-- RIGHT PANEL: Leaderboard -->
-        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <!-- RIGHT PANEL: Leaderboard (always visible md+, tab-controlled on mobile) -->
+        <div id="modalPanelLb" class="hidden md:flex flex-col flex-1 min-w-0 overflow-hidden">
             <!-- Leaderboard header -->
             <div class="p-5 border-b border-slate-800/80 flex items-center justify-between sticky top-0 bg-slate-950/90 backdrop-blur-md z-10">
                 <div class="flex items-center gap-3">
                     <span class="text-base font-black uppercase tracking-widest text-white">All Managers</span>
                     <span id="lbLastUpdated" class="text-[10px] text-slate-500 font-bold"></span>
                 </div>
-                <button onclick="loadGlobalLb()" class="text-[10px] text-slate-500 hover:text-slate-300 font-bold transition flex items-center gap-1"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button>
+                <div class="flex items-center gap-2">
+                    <button onclick="closeAccountModal()" class="md:hidden p-2 hover:bg-slate-800 rounded-full transition text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    <button onclick="loadGlobalLb()" class="text-[10px] text-slate-500 hover:text-slate-300 font-bold transition flex items-center gap-1"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button>
+                </div>
             </div>
             <!-- Leaderboard list -->
             <div id="globalLbList" class="flex-1 overflow-y-auto custom-scroll divide-y divide-slate-800/40">
@@ -183,7 +192,7 @@
 <div id="toast" class="fixed bottom-10 right-10 bg-slate-900 border border-slate-700 text-white px-6 py-4 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 z-50 font-bold flex items-center gap-3"><span id="toastMsg"></span></div>
 <script>
 const SHEET_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vSMTqwP3ViGcOKh0lYRGL9rdAL-Q84U85iZSLTqwdT3OGXKhMvIsI-pNC_cbRjcod0teMJ7YbRXREhy/pub?gid=607342177&single=true&output=csv';
-const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbwW2WjG2Ne6msSl9CUxgiyeCdvL2xZC74lvH3qIyJWzLGN_1UoyF_XAnSOUp6OKQYBEAg/exec';
+const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycby1N-4rNwKeSie4QMGD7MT4Ynh2rO3mMJKYz4qzU1fjTCb0BK8pIhz_thMjU2lmJVcdQg/exec';
 const MAX_ROSTER=4,AUTO_SYNC_MS=3600000,SAVE_KEY='cr4_wallet_v1',ACCT_KEY='cr4_account_v1',TUT_KEY='cr4_tut_done';
 let farmers=[],compareSelection=[],dailyBest={},cdTimer=null,autoSync=null,accountUser=null,isAdmin=false;
 let wallet={balance:100,roster:[],captain:null,lastMatchDate:null};
@@ -728,8 +737,25 @@ function closeTutorial(){document.getElementById('tutorialOverlay').classList.ad
 
 function loadAcct(){const sv=localStorage.getItem(ACCT_KEY)||localStorage.getItem('cr_account');if(sv){accountUser=JSON.parse(sv);startAutoSyncFn();}}
 function saveAcct(u){accountUser=u;localStorage.setItem(ACCT_KEY,JSON.stringify(u));}
-function openAccountModal(){document.getElementById('accountModal').classList.remove('hidden');lucide.createIcons();renderAcctPanel();loadGlobalLb();loadBattles();}
+function openAccountModal(){document.getElementById('accountModal').classList.remove('hidden');lucide.createIcons();renderAcctPanel();loadGlobalLb();loadBattles();switchModalTab('hub');}
 function closeAccountModal(){document.getElementById('accountModal').classList.add('hidden');}
+function switchModalTab(tab){
+  const hub=document.getElementById('modalPanelHub');
+  const lb=document.getElementById('modalPanelLb');
+  const btnHub=document.getElementById('tabBtnHub');
+  const btnLb=document.getElementById('tabBtnLb');
+  if(!hub||!lb)return;
+  // On md+ both panels always show — only toggle on mobile
+  const isMobile=window.innerWidth<768;
+  if(isMobile){
+    hub.classList.toggle('hidden',tab!=='hub');
+    lb.classList.toggle('hidden',tab!=='lb');
+    // lb needs flex when shown
+    if(tab==='lb')lb.classList.add('flex');else lb.classList.remove('flex');
+  }
+  if(btnHub)btnHub.className=`flex-1 py-3 text-xs font-black uppercase tracking-widest transition border-b-2 ${tab==='hub'?'text-white border-indigo-500':'text-slate-500 border-transparent'}`;
+  if(btnLb)btnLb.className=`flex-1 py-3 text-xs font-black uppercase tracking-widest transition border-b-2 ${tab==='lb'?'text-white border-indigo-500':'text-slate-500 border-transparent'}`;
+}
 function renderAcctPanel(){
   const panel=document.getElementById('accountPanel');
   if(accountUser){
@@ -1095,4 +1121,3 @@ window.onload=init;
 </script>
 </body>
 </html>
-
