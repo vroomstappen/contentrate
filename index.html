@@ -953,16 +953,25 @@ async function deleteUser(userId,username){
 // Prize:  winner gets 20% of loser's match gain added to their balance
 
 async function apiPost(payload){
-  const res=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload),redirect:'follow'});
-  return res.json();
+  // Apps Script redirects POST→GET on 302, losing the body.
+  // Use no-redirect and re-POST to the final URL instead.
+  try{
+    const r=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+    const text=await r.text();
+    return JSON.parse(text);
+  }catch(e){
+    // If redirect happened, the response won't be JSON — return a safe error
+    return{ok:false,error:'Network error: '+e.message};
+  }
 }
 
 async function sendChallenge(targetId,targetName){
   if(!accountUser)return toast('Create an account first','error');
   if(targetId===accountUser.userId)return toast("You can't challenge yourself",'error');
   toast('Sending challenge...','neutral');
+  const challengerRank=getRank(getStars()).name;
   try{
-    const r=await apiPost({action:'sendChallenge',challengerId:accountUser.userId,challengerName:accountUser.username,targetId,targetName});
+    const r=await apiPost({action:'sendChallenge',challengerId:accountUser.userId,challengerName:accountUser.username,targetId,targetName,challengerRank});
     if(!r.ok)return toast(r.error==='Active battle already exists'?'Already have an active battle with '+targetName:'Challenge failed: '+r.error,'error');
     toast('\u2694\uFE0F Challenge sent to '+targetName+'! They need to accept.','gold');
     loadBattles();
@@ -1005,15 +1014,17 @@ async function submitBattleResults(matchGain){
           const myGain=isChal?done.challengerGain:done.targetGain;
           const oppGain=isChal?done.targetGain:done.challengerGain;
           const oppName=isChal?done.targetName:done.challengerName;
+          // Prize based on the lower rank in the match (challenger's rank stored on battle)
+          const battleRank=done.challengerRank||'Noob';
+          const rankPrize={'Noob':10,'Novice':20,'Intermediate':30,'Professional':40,'Elite':50};
+          const prize=rankPrize[battleRank]||10;
           if(myGain>oppGain){
-            const prize=Math.floor(oppGain*0.20);
             wallet.balance+=prize;updateHUD();
             addStar();
-            toast('\uD83C\uDFC6 Battle won vs '+oppName+'! +'+prize+' CP (20% of their +'+oppGain+' match gain)','gold');
+            toast('\uD83C\uDFC6 Battle won vs '+oppName+'! +'+prize+' CP ('+battleRank+' stakes)','gold');
           }else if(myGain<oppGain){
-            const loss=Math.floor(myGain*0.20);
             loseStar();
-            toast('\uD83D\uDC80 Battle lost vs '+oppName+'. They earn '+loss+' CP (20% of your +'+myGain+' match gain).','error');
+            toast('\uD83D\uDC80 Battle lost vs '+oppName+'. They earn +'+prize+' CP. ('+battleRank+' stakes)','error');
           }else{
             toast('\uD83E\uDD1D Draw vs '+oppName+'! No CP exchanged.','neutral');
           }
@@ -1043,7 +1054,7 @@ function renderBattleInbox(battles){
   el.innerHTML=[
     ...incoming.map(b=>`<div class="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl mb-2">
       <span class="text-base">\u2694\uFE0F</span>
-      <div class="flex-1 min-w-0"><p class="text-xs font-black text-white">${b.challengerName} challenged you!</p><p class="text-[10px] text-slate-400">Winner gets 20% of loser's match CP gain</p></div>
+      <div class="flex-1 min-w-0"><p class="text-xs font-black text-white">${b.challengerName} challenged you!</p><p class="text-[10px] text-slate-400">Stakes: <span class="text-amber-300 font-bold">${{'Noob':10,'Novice':20,'Intermediate':30,'Professional':40,'Elite':50}[b.challengerRank||'Noob']} CP</span> · ${b.challengerRank||'Noob'} tier</p></div>
       <button onclick="acceptChallenge('${b.id}')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black rounded-lg transition">Accept</button>
       <button onclick="declineChallenge('${b.id}')" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 text-[10px] font-black rounded-lg transition">Decline</button>
     </div>`),
@@ -1068,11 +1079,12 @@ function renderBattleInbox(battles){
       const oppGain=isChal?b.targetGain:b.challengerGain;
       const opp=isChal?b.targetName:b.challengerName;
       const won=myGain>oppGain;
-      const prize=Math.floor((won?oppGain:myGain)*0.20);
+      const rankPrize={'Noob':10,'Novice':20,'Intermediate':30,'Professional':40,'Elite':50};
+      const prize=rankPrize[b.challengerRank||'Noob']||10;
       return`<div class="flex items-center gap-2 p-3 bg-slate-800/40 border border-slate-700/40 rounded-xl mb-2 opacity-70">
         <span class="text-base">${won?'\uD83C\uDFC6':'\uD83D\uDC80'}</span>
         <div class="flex-1"><p class="text-xs font-black ${won?'text-emerald-400':'text-red-400'}">${won?'Won':'Lost'} vs ${opp}</p>
-        <p class="text-[10px] text-slate-500">You +${myGain} CP vs their +${oppGain} CP &middot; ${won?'+':''}${won?prize:-prize} CP prize &middot; ${new Date(b.resolvedAt).toLocaleDateString()}</p></div>
+        <p class="text-[10px] text-slate-500">${won?'+'+prize:'-0'} CP · ${b.challengerRank||'Noob'} · ${new Date(b.resolvedAt).toLocaleDateString()}</p></div>
       </div>`;
     })
   ].join('');
